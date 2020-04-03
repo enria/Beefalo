@@ -4,7 +4,7 @@ import uuid
 import time
 
 from PyQt5 import QtCore, Qt, QtGui
-from PyQt5.QtCore import pyqtSignal, QThread, QModelIndex, QObject, QRect
+from PyQt5.QtCore import pyqtSignal, QThread, QModelIndex, QObject, QRect, QEvent
 from PyQt5.QtGui import QCursor, QKeySequence, QPalette, QColor, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
@@ -28,6 +28,8 @@ class WoxWidget(QWidget):
         self.addGlobalHotkey()
         self.plugins = {}
         self.loadPlugins()
+
+        self.installEventFilter(self)  # 把自己当成一个过滤器安装到儿子身上
 
         self.debounceThread = DebounceThread(self)
         self.debounceThread.sinOut.connect(self.asyncChangeResult)
@@ -135,6 +137,7 @@ class WoxWidget(QWidget):
     def addGlobalHotkey(self):
         self.hotKeys = Hotkey(self)
         self.hotKeys.sinOut.connect(self.change_visible)
+        self.hotKeys.inputSinOut.connect(self.setInputText)
         self.hotKeys.start()
 
     def change_visible(self):
@@ -144,6 +147,11 @@ class WoxWidget(QWidget):
         else:
             self.activateWindow()
             self.setVisible(True)
+
+    def setInputText(self, text):
+        self.ws_input.setText(text)
+        self.activateWindow()
+        self.setVisible(True)
 
     def selectedUp(self):
         if self.result_model.selected:
@@ -182,6 +190,12 @@ class WoxWidget(QWidget):
                 self.change_visible()
             if index.action.method:
                 index.action.method()
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.WindowDeactivate:
+            self.change_visible()
+            return True  # 说明这个事件已被处理，其他控件别插手
+        return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
 
 
 class DebounceThread(QThread):
@@ -228,8 +242,9 @@ class DebounceThread(QThread):
                             if pli.callback:
                                 item, asyncThread = pli.query(keyword, text, self.view.token, self.obj)
                                 result += item
-                                asyncThread.sinOut.connect(self.view.asyncAddResults)
-                                asyncThread.start()
+                                if asyncThread:
+                                    asyncThread.sinOut.connect(self.view.asyncAddResults)
+                                    asyncThread.start()
                             else:
                                 result += pli.query(keyword, text)
                 self.sinOut.emit(result)
@@ -253,9 +268,9 @@ if __name__ == '__main__':
     tuopan = QSystemTrayIcon(app)  # 创建托盘
     tuopan.setIcon(QIcon("images/app_search2.png"))  # 设置托盘图标
     tpMenu = QMenu()
-    a1 = QAction(QIcon("images/app_search.png"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
+    a1 = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
     a1.triggered.connect(ex.change_visible)
-    a2 = QAction(QIcon("images/app_search.png"), u'退出', app)  # 添加一级菜单动作选项(退出程序)
+    a2 = QAction(u'退出', app)  # 添加一级菜单动作选项(退出程序)
     a2.triggered.connect(app.exit)
     tpMenu.addAction(a1)
     tpMenu.addAction(a2)
