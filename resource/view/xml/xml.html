@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML视图</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../plugin/bootstrap.css">
+    <script src="xml.js"></script>
+    <script src="../plugin/vue.js"></script>
+    <script src="../plugin/parser.min.js"></script>
+    <script src="../plugin/format.js"></script>
+</head>
+
+<body>
+    <div id="dv-container" style="padding-left: 15px;padding-right: 15px;display: flex;">
+        <div id="dv-editor" style="width:50%;padding:15px;display:flex;flex-direction: column;">
+            <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
+                <h4 style="flex-grow: 1;">文本内容</h4>
+                <div class="btn-group" style="align-items: center;">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="switch-wrap" v-model="wrap">
+                        <label class="custom-control-label" for="switch-wrap"> <span
+                                style="user-select: none;">自动换行</span> </label>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-left: 5px;">
+                    <button type="button" @click="zip()" class="btn btn-success">压缩</button>
+                    <button type="button" @click="format()" class="btn btn-primary">格式化</button>
+                </div>
+            </div>
+            <textarea class="form-control" v-model="text"
+                :style="{wordBreak: wrap?'break-all':'initial',whiteSpace:wrap?'initial':'nowrap'}"
+                style="flex-grow: 1;margin-bottom: 5px;font-size: 14px;font-family: 'Source Code Pro';"></textarea>
+            <div class="alert alert-danger" role="alert" v-show="error">
+                {{error}}
+            </div>
+        </div>
+        <div id="dv-view" style="width:50%;padding:15px;display:flex;flex-direction: column;">
+            <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
+                <h4 style="flex-grow: 1;">XML结构</h4>
+                <div class="btn-group" style="align-items: center;">
+                    <div class="custom-control custom-switch" style="align-items: center;">
+                        <input type="checkbox" class="custom-control-input" id="switch-show" v-model="showChild">
+                        <label class="custom-control-label" for="switch-show"> <span
+                                style="user-select: none;">展开</span> </label>
+                    </div>
+                </div>
+            </div>
+            <div
+                style="flex-grow: 1;margin-bottom: 5px;border:1px solid #ced4da;border-radius: 0.25rem;overflow:auto">
+                <xml-container style="font-family: 'Source Code Pro';font-size: 0;word-break: break-all;"
+                    :style="{wordBreak: wrap?'break-all':'initial',whiteSpace:wrap?'initial':'nowrap'}" :data="json"
+                    :level="0" :show-child="showChild">
+                </xml-container>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/x-template" id="tp-xml-container">
+    <div v-show="show">
+        <template v-for="(value,key) in data">
+            <template v-if="typeof(value)=='object'" v-show="status[key]">
+                <template v-if="Array.isArray(value)">
+                    <template v-for="(li,index) in value">
+                        <template v-if="typeof(li)=='object'">
+                            <div :style="{marginLeft:level*intend+'px'}" style="display:inline-block">
+                                <span  class="xml-tag">&lt;{{key}}&gt;</span>
+                                <span v-show="status[key+'>'+index]" @click="status[key+'>'+index]=false"
+                                    class="iconfont">&#xe670;</span>
+                                <span v-show="!status[key+'>'+index]" @click="status[key+'>'+index]=true"
+                                    class="iconfont">&#xe671;</span>
+                            </div>
+                            <xml-container :data="li" :level="level+1" :show="status[key+'>'+index]"></xml-container>
+                            <span :style="{marginLeft:status[key+'>'+index]?level*intend+'px':0}"
+                                class="xml-tag">&lt;/{{key}}&gt;</span><br />
+                        </template>
+                        <template v-else>
+                            <span :style="{marginLeft:level*intend+'px'}" class="xml-tag">&lt;{{key}}&gt;</span>
+                            <code class="xml-value">{{li}}</code>
+                            <span class="xml-tag">&lt;/{{key}}&gt;</span><br />
+                        </template>
+                    </template>
+                </template>
+                <template v-else>
+                    <div :style="{marginLeft:level*intend+'px'}" style="display:inline-block">
+                        <span  class="xml-tag">&lt;{{key}}&gt;</span>
+                        <span v-show="status[key]" @click="status[key]=false" class="iconfont">&#xe670;</span>
+                        <span v-show="!status[key]" @click="status[key]=true" class="iconfont">&#xe671;</span>
+                    </div>
+                    <xml-container :data="value" :level="level+1" :show="status[key]"></xml-container>
+                    <span :style="{marginLeft:status[key]?level*intend+'px':0}"
+                        class="xml-tag">&lt;/{{key}}&gt;</span><br />
+                </template>
+            </template>
+            <template v-else>
+                <span :style="{marginLeft:level*intend+'px'}" class="xml-tag">&lt;{{key}}&gt;</span>
+                <span class="xml-value">{{value}}</span>
+                <span class="xml-tag">&lt;/{{key}}&gt;</span><br />
+            </template>
+        </template>
+    </div>
+</script>
+<script>
+    Vue.component('xml-container', {
+        props: {
+            data: [Object, Array], level: Number, show: { type: Boolean, default: true }, showChild: {
+                type: Boolean,
+                default: true
+            }
+        },
+        data: function () {
+            return { intend: 4 * 10, status: {}}
+        },
+        template: "#tp-xml-container",
+        methods: {
+            initStatus: function () {
+                for (var key in this.data) {
+                    if (Array.isArray(this.data[key])) {
+                        for (var i = 0; i < this.data[key].length; i++) {
+                            Vue.set(this.status, key+'>'+i, true)
+                        }
+                    }else{
+                        Vue.set(this.status, key, true)
+                    }
+                }
+            }
+        },
+        watch: {
+            data: function () {
+                this.initStatus()
+            },
+            showChild: function () {
+                for (var key in this.status) {
+                    this.status[key] = this.showChild
+                }
+            }
+        },
+        mounted: function () {
+            this.initStatus()
+        }
+    })
+    var vm = new Vue({
+        el: "#dv-container",
+        data: {
+            text: xmlData,
+            error: null,
+            json: null,
+            lazy: false,
+            showChild: true,
+            wrap: false
+        },
+        watch: {
+            text: function () {
+                if (this.lazy) {
+                    this.lazy = false
+                    return
+                }
+                this.parse()
+            }
+        },
+        methods: {
+            format: function () {
+                if (this.json) {
+                    this.text = formateXml(this.text)
+                    this.lazy = true;
+                }
+            },
+            zip: function () {
+                if (this.text) {
+                    this.text = this.text.replace(/>\s*\n/g,">").replace(/\s*</g,"<")
+                    this.lazy = true
+                }
+            },
+            parse: function () {
+                try {
+                    this.json = parser.parse(this.text, { arrayMode: false }, true)
+                    this.error = null
+                } catch (error) {
+                    this.error = error
+                    this.json = null
+                }
+            }
+        },
+        mounted: function () {
+            this.parse()
+        }
+    })
+</script>
+
+</html>
+
+</html>

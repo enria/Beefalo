@@ -86,7 +86,8 @@ class WebSearchPlugin:
                               "https://www.baidu.com/#ie=UTF-8&wd={}",
                               "https://www.baidu.com")
     }
-    keywords = engines.keys()
+    keywords = list(engines.keys())
+    _name_, _desc_, _icon_ = "搜索引擎", "使用默认浏览器搜索关键词", "web_search_icon.png"
 
     def __init__(self, open_sug=True):
         self.callback = False

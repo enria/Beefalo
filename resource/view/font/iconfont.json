@@ -1,0 +1,23 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "11673572",
+      "name": "minus",
+      "font_class": "minus",
+      "unicode": "e670",
+      "unicode_decimal": 58992
+    },
+    {
+      "icon_id": "11673574",
+      "name": "plus",
+      "font_class": "plus",
+      "unicode": "e671",
+      "unicode_decimal": 58993
+    }
+  ]
+}

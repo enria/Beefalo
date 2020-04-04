@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>代码视图</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../plugin/bootstrap.css">
+    <script src="code.js"></script>
+    <script src="../plugin/vue.js"></script>
+    <script src="../plugin/prism/prism.js" data-manual></script>
+    <script src="../plugin/jquery-3.4.1.min.js"></script>
+    <script src="../plugin/popper.min.js"></script>
+    <script src="../plugin/clipboard.min.js"></script>
+    <script src="../plugin/bootstrap.min.js"></script>
+    <link href="../plugin/prism/prism.css" rel="stylesheet" />
+</head>
+
+<body>
+    <div id="dv-container" style="padding-left: 15px;padding-right: 15px;display: flex;">
+        <div id="dv-editor" style="width:100%;padding:15px;display:flex;flex-direction: column;">
+            <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
+                <h4 style="flex-grow: 1;">文本内容</h4>
+                <form class="form-inline">
+                    <div class="custom-control custom-switch" style="margin-right: 5px;">
+                        <input type="checkbox" class="custom-control-input" id="switch-wrap" v-model="wrap">
+                        <label class="custom-control-label" for="switch-wrap"> <span
+                                style="user-select: none;">自动换行</span> </label>
+                    </div>
+                    <button id="btn-copy" data-placement="bottom" type="button" data-content="已复制"
+                        @mouseout="copyed=false" :data-clipboard-text="text" class="btn btn-success"
+                        @click="copyed=true" style="margin-right: 5px;">复制</button>
+                    <select class="custom-select my-1 mr-4" style="width: 200px;" id="select-language"
+                        v-model="language">
+                        <option value="plain">选择语言</option>
+                        <option v-for="(lan,index) in languages" :value="lan">{{lan}}</option>
+                    </select>
+                </form>
+            </div>
+            <prism-code :text="text" :wrap="wrap" :language="language" :key="wrap+language"></prism-code>
+            <div class="alert alert-danger" role="alert" v-show="error">
+                {{error}}
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/x-template" id="tp-prism-code">
+    <div class="code-toolbar">
+        <pre class="line-numbers"  id="editor" style="display: flex;flex-direction: column;border-radius:5px"
+            :style="{whiteSpace: wrap?'pre-wrap':'pre'}">
+            <code :class="['language-'+language]"
+                style="flex-grow: 1;font-size: 14px;font-family: 'Source Code Pro';">{{text}}</code>
+        </pre>
+    </div>
+</script>
+<script>
+    Vue.component('prism-code', {
+        props: {
+            text: String, wrap: Boolean, language: String
+        },
+        data: function () {
+            return {}
+        },
+        template: "#tp-prism-code",
+        methods: {
+            addHighlight: function () {
+                Prism.highlightAll()
+            }
+        },
+        mounted: function () {
+            this.addHighlight()
+        }
+    })
+    var vm = new Vue({
+        el: "#dv-container",
+        data: {
+            text: textData,
+            language: window.inputLan || "plain",
+            languages: [],
+            error: null,
+            wrap: true,
+            copyed: false
+        },
+        watch: {
+            copyed: function () {
+                $('#btn-copy').popover(this.copyed ? 'show' : 'hide')
+            }
+        },
+        mounted: function () {
+            var lans = {}
+            for (var key in Prism.languages) {
+                if (typeof (Prism.languages[key]) == "object") {
+                    var lan = (Prism.languages[key])
+                    if (lan.__id) {
+                        if (lans[lan.__id]) {
+                            if (key.length > lans[lan.__id]) {
+                                lans[lan.__id] = key
+                            }
+                        } else {
+                            lans[lan.__id] = key
+                        }
+                    }else{
+                        lans[key] = key
+                    }
+
+                }
+            }
+            for (var id in lans) {
+                this.languages.push(lans[id])
+            }
+            new ClipboardJS('#btn-copy');
+            $("#btn-copy").popover({
+                trigger: "manual"
+            });
+        }
+    })
+</script>
+</html>

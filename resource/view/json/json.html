@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON视图</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../plugin/bootstrap.css">
+    <script src="json.js"></script>
+    <script src="../plugin/vue.js"></script>
+</head>
+
+<body>
+    <div id="dv-container" style="padding-left: 15px;padding-right: 15px;display: flex;">
+        <div id="dv-editor" style="width:50%;padding:15px;display:flex;flex-direction: column;">
+            <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
+                <h4 style="flex-grow: 1;">文本内容</h4>
+                <div class="btn-group" style="align-items: center;">
+                    <div class="custom-control custom-switch">
+                        <input type="checkbox" class="custom-control-input" id="switch-wrap" v-model="wrap">
+                        <label class="custom-control-label" for="switch-wrap"> <span
+                                style="user-select: none;">自动换行</span> </label>
+                    </div>
+                </div>
+                <div class="btn-group" style="margin-left: 5px;">
+                    <button type="button" @click="zip()" class="btn btn-success">压缩</button>
+                    <button type="button" @click="format()" class="btn btn-primary">格式化</button>
+                </div>
+            </div>
+            <textarea class="form-control" v-model="text"
+                :style="{wordBreak: wrap?'break-all':'initial',whiteSpace:wrap?'initial':'nowrap'}"
+                style="flex-grow: 1;margin-bottom: 5px;font-size: 14px;font-family: 'Source Code Pro';"></textarea>
+            <div class="alert alert-danger" role="alert" v-show="error">
+                {{error}}
+            </div>
+        </div>
+        <div id="dv-view" style="width:50%;padding:15px;display:flex;flex-direction: column;">
+            <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
+                <h4 style="flex-grow: 1;">JSON结构</h4>
+                <div class="btn-group" style="align-items: center;">
+                    <div class="custom-control custom-switch" style="align-items: center;">
+                        <input type="checkbox" class="custom-control-input" id="switch-show" v-model="showChild">
+                        <label class="custom-control-label" for="switch-show"> <span
+                                style="user-select: none;">展开</span> </label>
+                    </div>
+                </div>
+            </div>
+            <div
+                style="flex-grow: 1;margin-bottom: 5px;border:1px solid #ced4da;border-radius: 0.25rem;overflow:auto">
+                <json-container style="font-family: 'Source Code Pro';font-size: 0;word-break: break-all;font-size: 0;"
+                    :style="{wordBreak: wrap?'break-all':'initial',whiteSpace:wrap?'initial':'nowrap'}" :data="json"
+                    :level="1" :show-child="showChild">
+                </json-container>
+            </div>
+        </div>
+    </div>
+</body>
+<script type="text/x-template" id="tp-json-container">
+    <div v-if="Array.isArray(data)" v-show="show">
+        <span v-if="level==1">[<br/></span>
+        <template v-for="(value,index) in data">
+            <template v-if="typeof(value)=='object'">
+                    <div :style="{marginLeft:level*intend+'px'}" style="display:inline-block">
+                        <span>{{Array.isArray(value)?"[":"{"}}</span>
+                        <span v-show="status[index]" @click="status[index]=false" class="iconfont">&#xe670;</span>
+                        <span v-show="!status[index]"  @click="status[index]=true" class="iconfont">&#xe671;</span>
+                    </div>
+                    <json-container :data="value" :level="level+1" :show="status[index]"></json-container>
+                    <span :style="{marginLeft:status[index]?level*intend+'px':0}">{{Array.isArray(value)?"]":"}"}}</span>
+            </template>
+            <span v-else :style="{marginLeft:level*intend+'px'}" :class="['json-'+typeof(value)]" >
+                {{typeof(value)=='string'?'"'+value+'"':value}}
+            </span><span v-if="index!=last">,</span><br/>
+        </template>
+        </template>
+        <span v-if="level==1">]</span>
+    </div>
+    <div v-else  v-show="show">
+        <span v-if="level==1">{</span><br/>
+        <template v-for="(value,key) in data">
+                <span  :style="{marginLeft:level*intend+'px'}" class="json-key">"{{key}}":</span>
+                <template v-if="typeof(value)=='object'">
+                        <div style="display:inline-block">
+                            <span>{{Array.isArray(value)?"[":"{"}}</span>
+                            <span v-show="status[key]" @click="status[key]=false" class="iconfont">&#xe670;</span>
+                            <span v-show="!status[key]"  @click="status[key]=true" class="iconfont">&#xe671;</span>
+                        </div>
+                        <json-container :data="value" :level="level+1"  :show="status[key]"></json-container>
+                        <span  :style="{marginLeft:status[key]?level*intend+'px':0}">{{Array.isArray(value)?"]":"}"}}</span>
+                </template>
+                <span v-else :class="['json-'+typeof(value)]">
+                    {{typeof(value)=='string'?'"'+value+'"':value}}
+                </span><span v-if="key!=last">,</span><br/>
+        </template>
+        <span v-if="level==1">}</span>
+    </div>
+    </div>
+</script>
+<script>
+    Vue.component('json-container', {
+        props: {
+            data: [Object, Array], level: Number, show: { type: Boolean, default: true }, showChild: {
+                type: Boolean,
+                default: true
+            }
+        },
+        data: function () {
+            return { intend: 4 * 10, status: {}, last: null }
+        },
+        template: "#tp-json-container",
+        methods: {
+            initStatus: function () {
+                if (Array.isArray(this.data)) {
+                    for (var i = 0; i < this.data.length; i++) {
+                        Vue.set(this.status, i, true)
+                    }
+                    this.last = this.data.length - 1
+                } else {
+                    for (var key in this.data) {
+                        Vue.set(this.status, key, true)
+                        this.last = key
+                    }
+                }
+            }
+        },
+        watch: {
+            data: function () {
+                this.initStatus()
+            },
+            showChild: function () {
+                for (var key in this.status) {
+                    this.status[key] = this.showChild
+                }
+            }
+        },
+        mounted: function () {
+            this.initStatus()
+        }
+    })
+    var reader = new FileReader();
+    reader.onload = function () {
+        console.log(reader)
+    };
+    var vm = new Vue({
+        el: "#dv-container",
+        data: {
+            text: jsonData,
+            error: null,
+            json: null,
+            lazy: false,
+            showChild: true,
+            wrap: false
+        },
+        watch: {
+            text: function () {
+                if (this.lazy) {
+                    this.lazy = false
+                    return
+                }
+                try {
+                    this.json = JSON.parse(this.text)
+                    this.error = null
+                } catch (error) {
+                    this.error = error
+                }
+            }
+        },
+        methods: {
+            format: function () {
+                if (this.json) {
+                    this.text = JSON.stringify(this.json, null, 4)
+                    this.lazy = true;
+                }
+            },
+            zip: function () {
+                if (this.json) {
+                    this.text = JSON.stringify(this.json)
+                    this.lazy = true
+                }
+            }
+        },
+        mounted: function () {
+            try {
+                this.json = JSON.parse(this.text)
+            } catch (error) {
+                this.error = error
+            }
+        }
+
+    })
+</script>
+
+</html>

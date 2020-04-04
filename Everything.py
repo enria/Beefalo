@@ -3,6 +3,8 @@ from PyQt5.QtCore import QThread, pyqtSignal
 import os
 from ctypes.wintypes import *
 
+from PyQt5.QtGui import QIcon
+
 from FileIcon import fileicons
 from ResultModel import ResultItem, ResultAction
 
@@ -23,6 +25,9 @@ EVERYTHING_REQUEST_HIGHLIGHTED_FILE_NAME = 0x00002000
 EVERYTHING_REQUEST_HIGHLIGHTED_PATH = 0x00004000
 EVERYTHING_REQUEST_HIGHLIGHTED_FULL_PATH_AND_FILE_NAME = 0x00008000
 
+EVERYTHING_SORT_NAME_ASCENDING = 1
+EVERYTHING_SORT_NAME_DESCENDING = 2
+
 everything_dll = ctypes.WinDLL("dll/Everything64.dll")
 everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
 
@@ -31,12 +36,11 @@ everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_w
 
 
 class FileResultItem(ResultItem):
-    from FileIcon import fileicons
-
-    def __init__(self, fileName: str, fullPath, isDir):
+    def __init__(self, fileName: str, fullPath, isDir, api):
         super().__init__()
         self.title = fileName
         self.subTitle = fullPath
+        self.api = api
 
         if isDir:
             self.icon = fileicons["folder"]
@@ -52,16 +56,20 @@ class FileResultItem(ResultItem):
         self.action = ResultAction(self.openFile, True)
 
     def openFile(self):
-        os.startfile(self.subTitle)
+        try:
+            os.startfile(self.subTitle)
+        except BaseException as e:
+            self.api.show_message("无法打开文件", str(e), QIcon("images/everything_error.png"), 1000)
 
 
 class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token):
+    def __init__(self, parent, text, token, api):
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
         self.token = token
+        self.api = api
 
     @staticmethod
     def getFileName(path: str):
@@ -72,28 +80,31 @@ class AsyncSearchThread(QThread):
             everything_dll.Everything_SetSearchW(self.text)
             everything_dll.Everything_SetRequestFlags(
                 EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH)
-            everything_dll.Everything_SetMax(20)
+            everything_dll.Everything_SetMax(50)
             everything_dll.Everything_QueryW(True)
             num_results = everything_dll.Everything_GetNumResults()
             fullPath = ctypes.create_unicode_buffer(500)
             results = []
             for i in range(num_results):
+                # fullPath = ctypes.create_unicode_buffer(500)
                 everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 260)
                 path = ctypes.wstring_at(fullPath)
-                results.append(FileResultItem(AsyncSearchThread.getFileName(path), path, os.path.isdir(path)))
+                results.append(FileResultItem(AsyncSearchThread.getFileName(path), path, os.path.isdir(path), self.api))
             self.sinOut.emit(self.token, results)
         except BaseException as e:
             print(e)
 
 
 class EverythingPlugin:
-    keywords = {"*"}
+    keywords = ["*"]
+    _name_, _desc_, _icon_ = "Everything", "使用Everything查找本机文件", "everything_icon.gif"
 
-    def __init__(self):
+    def __init__(self, api):
         self.callback = True
+        self.api = api
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
         if token:
-            return [], AsyncSearchThread(parent, text, token)
+            return [], AsyncSearchThread(parent, text, token, self.api)
         return results

@@ -1,8 +1,8 @@
-import requests
 import re, json
 from PyQt5.QtCore import QThread, pyqtSignal, QObject
+
+from Plugin import AbstractPlugin
 from ResultModel import ResultItem, ResultAction
-import threading
 import requests
 import uuid
 from hashlib import sha256
@@ -41,29 +41,33 @@ class YoudaoApiThread(QThread):
         shaHash.update((params["appKey"] + params["q"] + params["salt"] + params["curtime"] + sec).encode(
             'utf-8'))
         params["sign"] = shaHash.hexdigest()
-        resp = requests.get("https://openapi.youdao.com/api", params)
-        apiResp = json.loads(resp.text)
-        results = []
-        if apiResp.get("basic"):
-            if apiResp["basic"].get("us-phonetic"):
-                phonetic, wfs = "美[{}]  英[{}]".format(apiResp["basic"].get("us-phonetic"),
-                                                      apiResp["basic"].get("uk-phonetic")), ""
-                if apiResp["basic"].get("wfs"):
-                    for wf in apiResp["basic"]["wfs"]:
-                        wfs += "{}：{}；".format(wf["wf"]["name"], wf["wf"]["value"])
-                    results.append(DictResultItem(wfs, phonetic, "basic"))
-                else:
-                    results.append(DictResultItem(phonetic, None, "basic"))
 
-            if apiResp["basic"].get("explains"):
-                for exp in apiResp["basic"]["explains"]:
-                    results.append(DictResultItem(exp, self.text, "translate"))
+        try:
+            results = []
+            resp = requests.get("https://openapi.youdao.com/api", params)
+            apiResp = json.loads(resp.text)
+            if apiResp.get("basic"):
+                if apiResp["basic"].get("us-phonetic"):
+                    phonetic, wfs = "美[{}]  英[{}]".format(apiResp["basic"].get("us-phonetic"),
+                                                          apiResp["basic"].get("uk-phonetic")), ""
+                    if apiResp["basic"].get("wfs"):
+                        for wf in apiResp["basic"]["wfs"]:
+                            wfs += "{}：{}；".format(wf["wf"]["name"], wf["wf"]["value"])
+                        results.append(DictResultItem(wfs, phonetic, "basic"))
+                    else:
+                        results.append(DictResultItem(phonetic, None, "basic"))
 
-        self.sinOut.emit(self.token, results)
+                if apiResp["basic"].get("explains"):
+                    for exp in apiResp["basic"]["explains"]:
+                        results.append(DictResultItem(exp, self.text, "translate"))
+            self.sinOut.emit(self.token, results)
+        except BaseException as e:
+            print(e)
 
 
-class DictPlugin:
-    keywords = {"dict"}
+class DictPlugin(AbstractPlugin):
+    keywords = ["dict"]
+    _name_, _desc_, _icon_ = "在线词典", "使用有道云接口的在线典", "dict_basic.png"
 
     def __init__(self):
         self.callback = True

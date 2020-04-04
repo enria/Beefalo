@@ -1,0 +1,29 @@
+{"color":"#939393","background":"#d6ebff","highlight":"#939393"}
+
+QWidget#MainWidget{
+    background-color: #ffffff
+}
+
+QLineEdit#MainLineEdit{
+    background-color: #ffffff;
+    color: #939393;
+    border: 1px solid #b2d7ef;
+    padding:3px 0;
+    margin:0px;
+}
+QListView#ResultListView{
+    background-color: #ffffff;
+    margin-top:10px;
+    border:0;
+}
+
+QScrollBar::handle:vertical{
+    width:9px;
+    background:#bababa;
+    min-height:10px;
+}
+
+QScrollBar:vertical{width:9px;background:rgba(0,0,0,0%);margin:0;padding-top:0px;padding-bottom:0px;}
+QScrollBar::add-line:vertical{height:0px;width:0px;}
+QScrollBar::sub-line:vertical{height:0px;width:0px;}
+QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{background:rgba(0,0,0,0%);}

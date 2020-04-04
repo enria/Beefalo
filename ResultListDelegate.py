@@ -5,11 +5,16 @@ from PyQt5.QtWidgets import QStyledItemDelegate
 
 
 class WidgetDelegate(QStyledItemDelegate):
+    def __init__(self, theme):
+        super(WidgetDelegate, self).__init__()
+        self.theme = theme
+
     def paint(self, painter, option, index):
         pm = QPixmap("images//" + index.data().icon)
         pm = pm.scaled(32, 32, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
+
         if index.data().selected:
-            background_brush = QBrush(QColor("#4f6180"), QtCore.Qt.SolidPattern)
+            background_brush = QBrush(QColor(self.theme["background"]), QtCore.Qt.SolidPattern)
             painter.fillRect(option.rect, background_brush)
 
         font = QFont('微软雅黑', 12)
@@ -26,15 +31,19 @@ class WidgetDelegate(QStyledItemDelegate):
         headerRect = QRect(48, iconRect.top() - 3, option.rect.width() - 48, 21)
         subheaderRect = QRect(48, iconRect.top() + 18, option.rect.width() - 48, 16)
 
+        color = self.theme["color"]
+        if index.data().selected:
+            color = self.theme["highlight"]
+
         painter.drawPixmap(
             QPoint(iconRect.left(), iconRect.top()),
             icon.pixmap(iconsize.width(), iconsize.height()));
-        painter.setFont(font);
-        painter.setPen(QColor("#f5f6f1"))
+        painter.setFont(font)
+        painter.setPen(QColor(color))
         painter.drawText(headerRect, QtCore.Qt.AlignTop, headerText);
 
-        painter.setFont(SubFont);
-        painter.setPen(QColor("#d9d9d4"))
+        painter.setFont(SubFont)
+        painter.setPen(QColor(color))
         painter.drawText(subheaderRect, QtCore.Qt.AlignTop, subText)
         # painter.restore()
 

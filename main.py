@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import json
 import sys
 import uuid
 import time
@@ -9,10 +10,14 @@ from PyQt5.QtGui import QCursor, QKeySequence, QPalette, QColor, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
 
+from Theme import ThemePlugin
 from Dict import DictPlugin
 from Everything import EverythingPlugin
+from Formatter import FormatterPlugin
+from PluginList import PluginListPlugin
+from SSJ import SSJPlugin
 from keyboard import Hotkey
-from ResultModel import ResultItem, ResultListMode
+from ResultModel import ResultItem, ResultListMode, ContextApi
 from ResultListDelegate import WidgetDelegate
 from WebSearch import WebSearchPlugin, AsyncSuggestThread
 import ctypes
@@ -22,12 +27,14 @@ import re
 
 
 class WoxWidget(QWidget):
-    def __init__(self):
+    def __init__(self, app):
         super().__init__()
-        self.initUI()
+        self.app = app
+        self.setting = None
         self.addGlobalHotkey()
         self.plugins = {}
         self.loadPlugins()
+        self.initUI()
 
         self.installEventFilter(self)  # 把自己当成一个过滤器安装到儿子身上
 
@@ -40,7 +47,19 @@ class WoxWidget(QWidget):
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def loadPlugins(self):
-        plugins = [WebSearchPlugin(), EverythingPlugin(), DictPlugin()]
+        api = ContextApi(self.setInputText, showMessage, self.changeTheme, self.getSetting, self.setSetting)
+        plugins = [WebSearchPlugin(), EverythingPlugin(api), DictPlugin(), SSJPlugin(api), FormatterPlugin(api)]
+
+        pluginList = PluginListPlugin(api, [WebSearchPlugin, EverythingPlugin, DictPlugin, SSJPlugin, FormatterPlugin,
+                                            PluginListPlugin, ThemePlugin])
+        plugins.append(pluginList)
+
+        theme = ThemePlugin(api)
+        themeName, mainTheme, highlightItem = theme.defaultTheme()
+        self.delegate = WidgetDelegate(highlightItem)
+        self.setStyleSheet(mainTheme)
+
+        plugins.append(theme)
         self.plugins["*"] = []
         for pli in plugins:
             if len(pli.keywords):
@@ -54,7 +73,7 @@ class WoxWidget(QWidget):
 
     def initUI(self):
         self.setGeometry(800, 66, 800, 66 + 46 * 8)
-        self.setWindowTitle('Burning widget')
+        self.setWindowTitle('Beefalo')
 
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
@@ -69,8 +88,8 @@ class WoxWidget(QWidget):
         font.setFamily("微软雅黑")
         font.setPointSize(21)  # change it's size
         self.ws_input.setFont(font)
-        self.ws_input.setStyleSheet("color:#e3e0e3;background-color:#616161;border:0;padding:3px 0;margin:0px;")
         self.ws_input.setFixedHeight(46)
+        self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handleTextChanged)
 
         self.ws_input.returnPressed.connect(self.handleResultSelected)
@@ -78,61 +97,30 @@ class WoxWidget(QWidget):
         vly.addWidget(self.ws_input)
 
         self.setWindowFlag(QtCore.Qt.ToolTip)
-        # self.setWindowFlag(QtCore.Qt.FramelessWindowHint)
 
         self.listview = QListView()
         self.result_model = ResultListMode(self)
         self.listview.setModel(self.result_model)
         self.listview.setMaximumHeight(0)
-        self.listview.verticalScrollBar().setStyleSheet("""
-        QScrollBar:vertical
-        {
-            width:6px;
-            background:rgba(0,0,0,0%);
-            margin:0;
-            padding-top:0px;   
-            padding-bottom:0px;
-        }
-        QScrollBar::handle:vertical
-        {
-            width:6px;
-            background:#616161;
-            border-radius:3px;  
-            min-height:10px;
-        }
-        QScrollBar::add-line:vertical   
-        {
-            height:0px;width:0px;
-        }
-        QScrollBar::sub-line:vertical   
-        {
-            height:0px;width:0px;
-        }
-        QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical 
-        {
-            background:rgba(0,0,0,0%);
-            border-radius:4px;
-        }""")
-        self.listview.setItemDelegate(WidgetDelegate())
+        self.listview.setItemDelegate(self.delegate)
         self.listview.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
         self.listview.clicked.connect(self.handleResultSelected)
-        self.listview.entered.connect(self.handleResultPeek)
         self.listview.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
-        self.listview.setMouseTracking(True)
 
         vly.addWidget(self.listview)
         vly.setContentsMargins(8, 10, 8, 10)
         vly.setSpacing(0)
         self.setLayout(vly)
-        palette = self.palette()
-        palette.setColor(QPalette.Window, QColor("#424242"))
-        palette.setColor(QPalette.Base, QColor("#424242"))
-        palette.setColor(QPalette.AlternateBase, QColor("#424242"))
-        self.listview.setPalette(palette)
-        self.listview.setStyleSheet("margin-top:10px;border:0;")
-        self.setPalette(palette)
+        self.listview.setObjectName("ResultListView")
+        self.setObjectName("MainWidget")
         self.show()
         self.activateWindow()
+
+    def changeTheme(self, themeName, mainTheme, highlightItem):
+        self.setStyleSheet(mainTheme)
+        self.delegate.theme = highlightItem
+        self.setSetting("theme", themeName)
+        # self.listview.dataChanged()
 
     def addGlobalHotkey(self):
         self.hotKeys = Hotkey(self)
@@ -156,10 +144,14 @@ class WoxWidget(QWidget):
     def selectedUp(self):
         if self.result_model.selected:
             self.handleResultPeek(self.result_model.createIndex(self.result_model.selected - 1, 0))
+        elif self.result_model.rowCount() > 1:
+            self.handleResultPeek(self.result_model.createIndex(self.result_model.rowCount() - 1, 0))
 
     def selectedDown(self):
         if self.result_model.selected < self.result_model.rowCount() - 1:
             self.handleResultPeek(self.result_model.createIndex(self.result_model.selected + 1, 0))
+        elif self.result_model.rowCount() > 1:
+            self.handleResultPeek(self.result_model.createIndex(0, 0))
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -177,6 +169,10 @@ class WoxWidget(QWidget):
             self.debounceThread.resume()
         self.debounceThread.work = False
 
+    def handleMouseEnter(self, index):
+        if self.mouseMove:
+            self.handleResultPeek(index)
+
     def handleResultPeek(self, index):
         old = self.result_model.createIndex(self.result_model.selected, 0)
         self.result_model.selected = index.row()
@@ -189,13 +185,25 @@ class WoxWidget(QWidget):
             if index.action.close:
                 self.change_visible()
             if index.action.method:
-                index.action.method()
+                index.action.method(*index.action.args)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible()
             return True  # 说明这个事件已被处理，其他控件别插手
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
+
+    def getSetting(self, key):
+        if not self.setting:
+            self.setting = json.load(open(".config", encoding="utf-8"))
+        return self.setting.get(key)
+
+    def setSetting(self, key, value):
+        if not self.setting:
+            self.setting = json.load(open(".config", encoding="utf-8"))
+        self.setting[key] = value
+        with open(".config", "w", encoding="utf-8") as file:
+            file.write(json.dumps(self.setting, ensure_ascii=False, indent=4))
 
 
 class DebounceThread(QThread):
@@ -219,7 +227,7 @@ class DebounceThread(QThread):
         self.work = True
         self.pause = False
         while True:
-            time.sleep(0.2)
+            time.sleep(0.1)
             if self.work:
                 result = []
                 query = self.view.ws_input.text()
@@ -261,10 +269,16 @@ class DebounceThread(QThread):
         self.pause = False
 
 
+global tuopan
+
+
+def showMessage(*args):
+    tuopan.showMessage(*args)
+
+
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    ex = WoxWidget()
-
+    ex = WoxWidget(app)
     tuopan = QSystemTrayIcon(app)  # 创建托盘
     tuopan.setIcon(QIcon("images/app_search2.png"))  # 设置托盘图标
     tpMenu = QMenu()

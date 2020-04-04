@@ -3,20 +3,29 @@ from random import random
 from PyQt5.QtCore import QAbstractListModel, QModelIndex
 
 
-class ResultItem:
-    def __init__(self):
-        super().__init__()
-        self.icon = str(random())
-        self.title = "在吗？" + str(random())
-        self.subTitle = "好的。" + str(random())
-        self.action = None
-        self.selected = False
+class ContextApi:
+    def __init__(self, change_query, show_message, change_theme, get_setting, set_setting):
+        self.change_query = change_query
+        self.show_message = show_message
+        self.change_theme = change_theme
+        self.get_setting = get_setting
+        self.set_setting = set_setting
 
 
 class ResultAction:
-    def __init__(self, method, close=True):
+    def __init__(self, method, close=True, *args):
         self.method = method
         self.close = close
+        self.args = args
+
+
+class ResultItem:
+    def __init__(self, title=None, subTitle=None, icon=None, action=ResultAction(None, True)):
+        self.icon = icon
+        self.title = title
+        self.subTitle = subTitle
+        self.action = action
+        self.selected = False
 
 
 class ResultListMode(QAbstractListModel):
@@ -47,15 +56,11 @@ class ResultListMode(QAbstractListModel):
             self.listItemData += itemDatas
             self.endInsertRows()
             self.selected = 0 if self.rowCount() > 0 else -1
-            self.adjustSize()
+        self.adjustSize()
 
     def changeItems(self, itemDatas):
-        self.removeRows(0, len(self.listItemData))
-        self.beginInsertRows(QModelIndex(), 0, len(itemDatas) - 1)
-        self.listItemData = itemDatas
-        self.endInsertRows()
-        self.selected = 0 if self.rowCount() > 0 else -1
-        self.adjustSize()
+        self.clear()
+        self.addItems(itemDatas)
 
     def deleteItem(self, index):
         del self.listItemData[index]

@@ -1,0 +1,96 @@
+@font-face {
+    font-family: 'iconfont';
+    src: url('font/iconfont.eot');
+    src: url('font/iconfont.eot?#iefix') format('embedded-opentype'),
+        url('font/iconfont.woff2') format('woff2'),
+        url('font/iconfont.woff') format('woff'),
+        url('font/iconfont.ttf') format('truetype'),
+        url('font/iconfont.svg#iconfont') format('svg');
+}
+.iconfont {
+    font-family: "iconfont" !important;
+    font-size: 16px;
+    font-style: normal;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    cursor: pointer;
+    font-size: 14px;
+    user-select:none;
+    font-weight: bold;
+}
+html{
+    height: 100%;
+}
+
+body{
+    margin:0;
+    height:100%
+}
+
+#dv-container{
+    height:100%;
+    /* display: flex; */
+}
+
+#dv-editor{
+    height:100%;
+    /* width:50%; */
+    /* background-color: green; */
+}
+
+#dv-view{
+    height:100%;
+    /* width:50%; */
+    /* background-color: red; */
+}
+
+.json-key{
+    color:#0451a5
+}
+.json-string{
+    color:#a31515
+}
+.json-boolean{
+    color:#0000ff
+}
+.json-number{
+    color:#098658
+}
+
+.xml-tag{
+    color:#800000
+}
+.xml-value{
+    color:#000000
+}
+
+span{
+    font-size: 14px;
+    word-spacing:0;
+}
+code{
+    font-size: 14px;
+}
+
+.code-toolbar{
+    display: flex;
+    flex-grow: 1;
+    overflow: auto;
+    flex-direction: column;
+}
+
+::-webkit-scrollbar
+{
+    width:6px;
+    height:16px;
+    background-color:#F5F5F5;
+    cursor:pointer;
+}
+/*定义滑块
+ 内阴影+圆角*/
+::-webkit-scrollbar-thumb
+{
+    border-radius:10px;
+    background-color:#555;
+    cursor:pointer;
+}
