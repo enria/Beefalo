@@ -1,4 +1,4 @@
-#Beefalo
+# Beefalo
 基于PyQt5的Windows启动器。  
 
 因为很喜欢Wox的设计（还是Alfred？），就给Wox写了一些插件来实现一些功能。  
