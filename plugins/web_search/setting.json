@@ -1,0 +1,46 @@
+{
+  "engines": {
+    "g": {
+      "name": "Google",
+      "icon": "images/web_search_google.png",
+      "query": "https://www.google.com/search?q={text}",
+      "home": "https://www.google.com"
+    },
+    "bing": {
+      "name": "Bing",
+      "icon": "images/web_search_bing.png",
+      "query": "https://www.bing.com/search?q={text}",
+      "home": "https://www.bing.com"
+    },
+    "you": {
+      "name": "Youtube",
+      "icon": "images/web_search_youtube.png",
+      "query": "https://www.youtube.com/results?search_query={text}",
+      "home": "https://www.youtube.com"
+    },
+    "bili": {
+      "name": "Bilibili",
+      "icon": "images/web_search_bilibili.png",
+      "query": "https://search.bilibili.com/all?keyword={text}",
+      "home": "https://www.bilibili.com/"
+    },
+    "baidu": {
+      "name": "Baidu",
+      "icon": "images/web_search_baidu.png",
+      "query": "https://www.baidu.com/#ie=UTF-8&wd={text}",
+      "home": "https://www.baidu.com"
+    },
+    "github": {
+      "name": "GitHub",
+      "icon": "images/web_search_github.png",
+      "query": "https://github.com/search?q={text}",
+      "home": "https://github.com"
+    },
+    "codelf": {
+      "name": "CODELF",
+      "icon": "images/web_search_codelf.png",
+      "query": "https://unbug.github.io/codelf/#{text}",
+      "home": "https://unbug.github.io/codelf"
+    }
+  }
+}

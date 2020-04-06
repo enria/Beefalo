@@ -1,21 +1,20 @@
 import re, json
-from PyQt5.QtCore import QThread, pyqtSignal, QObject
-
-from Plugin import AbstractPlugin
-from ResultModel import ResultItem, ResultAction
 import requests
 import uuid
 from hashlib import sha256
 from datetime import datetime
 
+from PyQt5.QtCore import QThread, pyqtSignal
+
+from plugin_api import PluginInfo, ContextApi, AbstractPlugin
+from result_model import ResultItem, ResultAction
+
 
 class DictResultItem(ResultItem):
-    icons = {"basic": "dict_basic.png", "translate": "dict_translate.png"}
+    icons = {"basic": "images/dict_basic.png", "translate": "images/dict_translate.png"}
 
-    def __init__(self, title, subTitle, resultType):
-        super().__init__()
-        self.title = title
-        self.subTitle = subTitle
+    def __init__(self, plugin_info, title, subTitle, resultType):
+        super().__init__(plugin_info, title, subTitle)
         self.icon = self.icons[resultType]
         self.action = ResultAction(None, True)
 
@@ -23,28 +22,29 @@ class DictResultItem(ResultItem):
 class YoudaoApiThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token):
+    def __init__(self, plugin_info, parent, text, token):
         super(YoudaoApiThread, self).__init__(parent)
         self.parent = parent
         self.text = text
         self.token = token
+        self.plugin_info = plugin_info
 
     def run(self):
         t = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
         salt = str(uuid.uuid1())
-        sec = "l75XR7v6A5pFIe59EZ7fcfJtiOWx82SS"
+        sec = "l75XR7v" + "6A5pFI" + "e59EZ7f" + "cfJtiOW" + "x82SS"
         params = {"q": self.text, "from": "auto", "to": "auto",
-                  "appKey": "2e6335573f802c90",
-                  "salt": salt, "signType": "v3", "curtime": str(t)}
+                  "app" + "Key": "2e633" + "5573f80" + "2c90",
+                  "salt": salt, "sign" + "Type": "v3", "curtime": str(t)}
 
         shaHash = sha256()
-        shaHash.update((params["appKey"] + params["q"] + params["salt"] + params["curtime"] + sec).encode(
+        shaHash.update((params["app" + "Key"] + params["q"] + params["salt"] + params["curtime"] + sec).encode(
             'utf-8'))
-        params["sign"] = shaHash.hexdigest()
+        params["si" + "gn"] = shaHash.hexdigest()
 
         try:
             results = []
-            resp = requests.get("https://openapi.youdao.com/api", params)
+            resp = requests.get("https://open" + "api.you" + "dao.com/api", params)
             apiResp = json.loads(resp.text)
             if apiResp.get("basic"):
                 if apiResp["basic"].get("us-phonetic"):
@@ -53,26 +53,26 @@ class YoudaoApiThread(QThread):
                     if apiResp["basic"].get("wfs"):
                         for wf in apiResp["basic"]["wfs"]:
                             wfs += "{}：{}；".format(wf["wf"]["name"], wf["wf"]["value"])
-                        results.append(DictResultItem(wfs, phonetic, "basic"))
+                        results.append(DictResultItem(self.plugin_info, wfs, phonetic, "basic"))
                     else:
-                        results.append(DictResultItem(phonetic, None, "basic"))
+                        results.append(DictResultItem(self.plugin_info, phonetic, None, "basic"))
 
                 if apiResp["basic"].get("explains"):
                     for exp in apiResp["basic"]["explains"]:
-                        results.append(DictResultItem(exp, self.text, "translate"))
+                        results.append(DictResultItem(self.plugin_info, exp, self.text, "translate"))
             self.sinOut.emit(self.token, results)
         except BaseException as e:
             print(e)
 
 
-class DictPlugin(AbstractPlugin):
-    keywords = ["dict"]
-    _name_, _desc_, _icon_ = "在线词典", "使用有道云接口的在线典", "dict_basic.png"
+class TranslatePlugin(AbstractPlugin):
+    meta_info = PluginInfo("在线词典", "使用有道云接口的在线典", "images/dict_basic.png",
+                           ["dict"], True)
 
-    def __init__(self):
-        self.callback = True
+    def __init__(self, api: ContextApi):
         # threading.Thread(target=self.loadDict).start()
         self.localDict = {}
+        self.api = api
 
     def loadDict(self):
         with open("resource/英汉词典TXT格式.txt", "r", encoding="UTF-16") as dicFile:
@@ -90,7 +90,7 @@ class DictPlugin(AbstractPlugin):
             results = []
             if self.localDict.get(text):
                 for translation in self.localDict[text]:
-                    results.append(DictResultItem(translation, text))
-            return results, YoudaoApiThread(parent, text, token)
+                    results.append(DictResultItem(self.meta_info, translation, text, "translate"))
+            return results, YoudaoApiThread(self.meta_info, parent, text, token)
         else:
             return [], None

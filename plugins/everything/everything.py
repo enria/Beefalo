@@ -1,12 +1,14 @@
-import ctypes
-from PyQt5.QtCore import QThread, pyqtSignal
 import os
+import ctypes
 from ctypes.wintypes import *
 
+from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtGui import QIcon
 
-from FileIcon import fileicons
-from ResultModel import ResultItem, ResultAction
+from file_icon import file_icons
+from result_model import ResultItem, ResultAction
+
+from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi
 
 EVERYTHING_REQUEST_FILE_NAME = 0x00000001
 EVERYTHING_REQUEST_PATH = 0x00000002
@@ -28,31 +30,25 @@ EVERYTHING_REQUEST_HIGHLIGHTED_FULL_PATH_AND_FILE_NAME = 0x00008000
 EVERYTHING_SORT_NAME_ASCENDING = 1
 EVERYTHING_SORT_NAME_DESCENDING = 2
 
-everything_dll = ctypes.WinDLL("dll/Everything64.dll")
-everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
-
-everything_dll.Everything_GetResultFileNameW.argtypes = [DWORD]
-everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
-
 
 class FileResultItem(ResultItem):
-    def __init__(self, fileName: str, fullPath, isDir, api):
-        super().__init__()
+    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api):
+        super().__init__(plugin_info)
         self.title = fileName
         self.subTitle = fullPath
         self.api = api
 
         if isDir:
-            self.icon = fileicons["folder"]
+            self.icon = file_icons["folder"]
         else:
-            self.icon = fileicons["*"]
+            self.icon = file_icons["*"]
             doti = fileName.rfind(".")
             if doti > -1:
                 ext = str(fileName[doti + 1:])
-                if fileicons.get(ext):
-                    self.icon = fileicons[ext]
+                if file_icons.get(ext):
+                    self.icon = file_icons[ext]
 
-        self.icon = "icons/" + self.icon + ".svg"
+        self.icon = os.path.join("images", "icons", self.icon + ".svg")
         self.action = ResultAction(self.openFile, True)
 
     def openFile(self):
@@ -65,11 +61,13 @@ class FileResultItem(ResultItem):
 class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token, api):
+    def __init__(self, parent, text, token, api, plugin_info, query_max=50):
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
         self.token = token
         self.api = api
+        self.plugin_info = plugin_info
+        self.query_max = query_max
 
     @staticmethod
     def getFileName(path: str):
@@ -80,31 +78,37 @@ class AsyncSearchThread(QThread):
             everything_dll.Everything_SetSearchW(self.text)
             everything_dll.Everything_SetRequestFlags(
                 EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH)
-            everything_dll.Everything_SetMax(50)
+            everything_dll.Everything_SetMax(self.query_max)
             everything_dll.Everything_QueryW(True)
             num_results = everything_dll.Everything_GetNumResults()
             fullPath = ctypes.create_unicode_buffer(500)
             results = []
             for i in range(num_results):
-                # fullPath = ctypes.create_unicode_buffer(500)
-                everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 260)
+                everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 490)
                 path = ctypes.wstring_at(fullPath)
-                results.append(FileResultItem(AsyncSearchThread.getFileName(path), path, os.path.isdir(path), self.api))
+                results.append(
+                    FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
+                                   self.api))
             self.sinOut.emit(self.token, results)
         except BaseException as e:
             print(e)
 
 
-class EverythingPlugin:
-    keywords = ["*"]
-    _name_, _desc_, _icon_ = "Everything", "使用Everything查找本机文件", "everything_icon.gif"
+class EverythingPlugin(AbstractPlugin, SettingInterface):
+    meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_icon.gif",
+                           ["*"], True)
 
-    def __init__(self, api):
-        self.callback = True
+    def __init__(self, api: ContextApi):
+        super().__init__()
         self.api = api
+        global everything_dll
+        everything_dll = ctypes.WinDLL(os.path.join(self.meta_info.path, "dll", "Everything64.dll"))
+        everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
+        everything_dll.Everything_GetResultFileNameW.argtypes = [DWORD]
+        everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
         if token:
-            return [], AsyncSearchThread(parent, text, token, self.api)
+            return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info)
         return results

@@ -1,77 +1,80 @@
-# -*- coding: utf-8 -*-
-import json
+import inspect
+import os
 import sys
 import uuid
 import time
-
-from PyQt5 import QtCore, Qt, QtGui
-from PyQt5.QtCore import pyqtSignal, QThread, QModelIndex, QObject, QRect, QEvent
-from PyQt5.QtGui import QCursor, QKeySequence, QPalette, QColor, QIcon
-from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
-                             QSizePolicy, QSystemTrayIcon, QMenu, QAction)
-
-from Theme import ThemePlugin
-from Dict import DictPlugin
-from Everything import EverythingPlugin
-from Formatter import FormatterPlugin
-from PluginList import PluginListPlugin
-from SSJ import SSJPlugin
-from keyboard import Hotkey
-from ResultModel import ResultItem, ResultListMode, ContextApi
-from ResultListDelegate import WidgetDelegate
-from WebSearch import WebSearchPlugin, AsyncSuggestThread
 import ctypes
+import re
+import importlib
 from win32process import SuspendThread, ResumeThread
 import win32con
-import re
+
+from PyQt5 import QtCore
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent
+from PyQt5.QtGui import QCursor, QKeySequence, QIcon
+from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
+                             QSizePolicy, QSystemTrayIcon, QMenu, QAction)
+from plugin_api import AbstractPlugin, ContextApi
+from result_list import ResultListModel, WidgetDelegate
+
+from keyboard import Hotkey
 
 
 class WoxWidget(QWidget):
-    def __init__(self, app):
+    def __init__(self, root_app):
         super().__init__()
-        self.app = app
-        self.setting = None
-        self.addGlobalHotkey()
-        self.plugins = {}
-        self.loadPlugins()
-        self.initUI()
+        self.app = root_app
 
-        self.installEventFilter(self)  # 把自己当成一个过滤器安装到儿子身上
+        self.result_model = ResultListModel(self)
+        self.ws_listview = QListView()
+        self.ws_input = QLineEdit(self)  # 整型文本框
+        self.delegate = WidgetDelegate()
 
-        self.debounceThread = DebounceThread(self)
-        self.debounceThread.sinOut.connect(self.asyncChangeResult)
-        self.debounceThread.start()
+        self.hotKeys = Hotkey(self)
+        self.add_global_hotkey()
 
-        QShortcut(QKeySequence("Up"), self, self.selectedUp)
-        QShortcut(QKeySequence("Down"), self, self.selectedDown)
-        QShortcut(QKeySequence("Esc"), self, self.change_visible)
+        self.plugins = {"*": []}
+        self.plugin_types = []
+        self.load_plugins()
+        self.token = None
 
-    def loadPlugins(self):
-        api = ContextApi(self.setInputText, showMessage, self.changeTheme, self.getSetting, self.setSetting)
-        plugins = [WebSearchPlugin(), EverythingPlugin(api), DictPlugin(), SSJPlugin(api), FormatterPlugin(api)]
+        self.installEventFilter(self)
 
-        pluginList = PluginListPlugin(api, [WebSearchPlugin, EverythingPlugin, DictPlugin, SSJPlugin, FormatterPlugin,
-                                            PluginListPlugin, ThemePlugin])
-        plugins.append(pluginList)
+        self.debounce_thread = DebounceThread(self)
+        self.debounce_thread.sinOut.connect(self.asyncChangeResult)
+        self.debounce_thread.start()
 
-        theme = ThemePlugin(api)
-        themeName, mainTheme, highlightItem = theme.defaultTheme()
-        self.delegate = WidgetDelegate(highlightItem)
-        self.setStyleSheet(mainTheme)
+        self.init_ui()
 
-        plugins.append(theme)
-        self.plugins["*"] = []
-        for pli in plugins:
-            if len(pli.keywords):
-                for keyword in pli.keywords:
+    def load_plugins(self):
+        plugins_dir = "plugins"
+        for plugin_dir in os.listdir(plugins_dir):
+            if os.path.isdir(os.path.join(plugins_dir, plugin_dir)):
+                sys.path.append(os.path.join(plugins_dir, plugin_dir))
+                plugin_module = importlib.import_module("%s.%s" % (plugins_dir, plugin_dir))
+                for att in dir(plugin_module):
+                    try:
+                        att_type = getattr(plugin_module, att)
+                        if AbstractPlugin in inspect.getmro(att_type):
+                            att_type.meta_info.path = os.path.join(plugins_dir, plugin_dir)
+                            self.plugin_types.append(att_type)
+                    except BaseException as e:
+                        pass
+
+        api = ContextApi(self.setInputText, showMessage, self.change_theme, self.plugin_types)
+
+        for plugin_type in self.plugin_types:
+            plugin = plugin_type(api)
+            if len(plugin.meta_info.keywords):
+                for keyword in plugin.meta_info.keywords:
                     if self.plugins.get(keyword):
-                        self.plugins[keyword].append(pli)
+                        self.plugins[keyword].append(plugin)
                     else:
-                        self.plugins[keyword] = [pli]
+                        self.plugins[keyword] = [plugin]
             else:
-                self.plugins["*"].append(pli)
+                self.plugins["*"].append(plugin)
 
-    def initUI(self):
+    def init_ui(self):
         self.setGeometry(800, 66, 800, 66 + 46 * 8)
         self.setWindowTitle('Beefalo')
 
@@ -83,7 +86,6 @@ class WoxWidget(QWidget):
 
         vly = QVBoxLayout()
 
-        self.ws_input = QLineEdit(self)  # 整型文本框
         font = self.ws_input.font()
         font.setFamily("微软雅黑")
         font.setPointSize(21)  # change it's size
@@ -98,35 +100,34 @@ class WoxWidget(QWidget):
 
         self.setWindowFlag(QtCore.Qt.ToolTip)
 
-        self.listview = QListView()
-        self.result_model = ResultListMode(self)
-        self.listview.setModel(self.result_model)
-        self.listview.setMaximumHeight(0)
-        self.listview.setItemDelegate(self.delegate)
-        self.listview.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
-        self.listview.clicked.connect(self.handleResultSelected)
-        self.listview.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        self.ws_listview.setModel(self.result_model)
+        self.ws_listview.setMaximumHeight(0)
+        self.ws_listview.setItemDelegate(self.delegate)
+        self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+        self.ws_listview.clicked.connect(self.handleResultSelected)
+        self.ws_listview.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
 
-        vly.addWidget(self.listview)
+        vly.addWidget(self.ws_listview)
         vly.setContentsMargins(8, 10, 8, 10)
         vly.setSpacing(0)
         self.setLayout(vly)
-        self.listview.setObjectName("ResultListView")
+        self.ws_listview.setObjectName("ResultListView")
         self.setObjectName("MainWidget")
         self.show()
         self.activateWindow()
 
-    def changeTheme(self, themeName, mainTheme, highlightItem):
+    def change_theme(self, mainTheme, highlightItem):
         self.setStyleSheet(mainTheme)
         self.delegate.theme = highlightItem
-        self.setSetting("theme", themeName)
-        # self.listview.dataChanged()
 
-    def addGlobalHotkey(self):
-        self.hotKeys = Hotkey(self)
+    def add_global_hotkey(self):
         self.hotKeys.sinOut.connect(self.change_visible)
         self.hotKeys.inputSinOut.connect(self.setInputText)
         self.hotKeys.start()
+
+        QShortcut(QKeySequence("Up"), self, self.selectedUp)
+        QShortcut(QKeySequence("Down"), self, self.selectedDown)
+        QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def change_visible(self):
         if self.isVisible():
@@ -165,19 +166,15 @@ class WoxWidget(QWidget):
         self.handleResultPeek(self.result_model.createIndex(0, 0))
 
     def handleTextChanged(self):
-        if self.debounceThread.pause:
-            self.debounceThread.resume()
-        self.debounceThread.work = False
-
-    def handleMouseEnter(self, index):
-        if self.mouseMove:
-            self.handleResultPeek(index)
+        if self.debounce_thread.pause:
+            self.debounce_thread.resume()
+        self.debounce_thread.work = False
 
     def handleResultPeek(self, index):
         old = self.result_model.createIndex(self.result_model.selected, 0)
         self.result_model.selected = index.row()
-        self.listview.dataChanged(index, old)
-        self.listview.scrollTo(index)
+        self.ws_listview.dataChanged(index, old)
+        self.ws_listview.scrollTo(index)
 
     def handleResultSelected(self):
         if self.result_model.selected >= 0:
@@ -191,29 +188,20 @@ class WoxWidget(QWidget):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible()
             return True  # 说明这个事件已被处理，其他控件别插手
+        if event.type() == QEvent.Close:
+            print("hello?")
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
-
-    def getSetting(self, key):
-        if not self.setting:
-            self.setting = json.load(open(".config", encoding="utf-8"))
-        return self.setting.get(key)
-
-    def setSetting(self, key, value):
-        if not self.setting:
-            self.setting = json.load(open(".config", encoding="utf-8"))
-        self.setting[key] = value
-        with open(".config", "w", encoding="utf-8") as file:
-            file.write(json.dumps(self.setting, ensure_ascii=False, indent=4))
 
 
 class DebounceThread(QThread):
     sinOut = pyqtSignal([list])
 
-    def __init__(self, view):
+    def __init__(self, view: 'WoxWidget'):
         super(DebounceThread, self).__init__(view.thread())
         self.view = view
         self.work = False
         self.pause = True
+        self.handle = None
 
     def run(self):
         self.obj = QObject()
@@ -240,14 +228,13 @@ class DebounceThread(QThread):
                         groups = pluginMath.groups()
                         keyword, text = groups[0], groups[1]
                         matched_plugins = self.view.plugins.get(keyword)
-
                     if not matched_plugins:
                         keyword, text = "*", query
                         matched_plugins = self.view.plugins["*"]
 
                     if matched_plugins:
                         for pli in matched_plugins:
-                            if pli.callback:
+                            if pli.meta_info.async_result:
                                 item, asyncThread = pli.query(keyword, text, self.view.token, self.obj)
                                 result += item
                                 if asyncThread:
@@ -280,7 +267,7 @@ if __name__ == '__main__':
     app = QApplication(sys.argv)
     ex = WoxWidget(app)
     tuopan = QSystemTrayIcon(app)  # 创建托盘
-    tuopan.setIcon(QIcon("images/app_search2.png"))  # 设置托盘图标
+    tuopan.setIcon(QIcon("images/bull.png"))  # 设置托盘图标
     tpMenu = QMenu()
     a1 = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
     a1.triggered.connect(ex.change_visible)
@@ -290,5 +277,4 @@ if __name__ == '__main__':
     tpMenu.addAction(a2)
     tuopan.setContextMenu(tpMenu)  # 把tpMenu设定为托盘的右键菜单
     tuopan.show()  # 显示托盘
-
     sys.exit(app.exec_())

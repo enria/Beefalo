@@ -1,11 +1,13 @@
-import os, shutil
-import re, json
+import os
+import re
+import json
 import yaml
 from lxml import etree
-from PyQt5.QtGui import QIcon, QGuiApplication
 
-from Plugin import AbstractPlugin
-from ResultModel import ResultItem, ResultAction, ContextApi
+from PyQt5.QtGui import QGuiApplication
+
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo
+from result_model import ResultItem, ResultAction
 
 
 def convertJsTemplate(text):
@@ -13,24 +15,24 @@ def convertJsTemplate(text):
 
 
 class FormatterPlugin(AbstractPlugin):
-    keywords = ["fmt"]
-    _name_, _desc_, _icon_ = "Formatter", "美化剪切板中的代码", "fmt_appicon.png"
     commands = {"view": "显示剪切板文本", "rmn": "删除换行", "adq": "添加引号"}
 
+    meta_info = PluginInfo("Formatter", "美化剪切板中的代码", "images/fmt_icon.png",
+                           ["fmt"], False)
+
     def __init__(self, api: ContextApi):
-        self.callback = False
         self.api = api
-        self.view = "resource"
+        self.view = os.path.join(self.meta_info.path, "view")
         self.sqlHelper = SQLHelper()
 
-    def query(self, keyword, text):
+    def query(self, keyword, text, token=None, parent=None):
         results = []
         clipboard = QGuiApplication.clipboard()
         clipText = clipboard.text()
         text = text.strip()
         if not clipText:
-            results.append(ResultItem("剪切板为空", "", "fmt_copy.png"))
-            return results;
+            results.append(ResultItem(self.meta_info, "剪切板为空", "", "images/fmt_copy.png"))
+            return results
         if not text:
             clipText = clipText.strip()
 
@@ -39,34 +41,37 @@ class FormatterPlugin(AbstractPlugin):
                     if clipText.startswith(("{", "[")):
                         jsonData = yaml.load(clipText, Loader=yaml.BaseLoader)
                         fmt = json.dumps(jsonData, indent=4, ensure_ascii=False)
-                        results.append(ResultItem("复制格式化后的JSON文本", fmt, "fmt_format.png",
+                        results.append(ResultItem(self.meta_info, "复制格式化后的JSON文本", fmt, "images/fmt_format.png",
                                                   ResultAction(clipboard.setText, True, fmt)))
                         zipped = json.dumps(jsonData, ensure_ascii=False)
-                        results.append(ResultItem("复制压缩后的JSON文本", zipped, "fmt_zip.png",
+                        results.append(ResultItem(self.meta_info, "复制压缩后的JSON文本", zipped, "images/fmt_zip.png",
                                                   ResultAction(clipboard.setText, True, zipped)))
-                        action = ResultAction(self.openViewpage, True, "view/json/json.html", "view/json/json.js",
+                        action = ResultAction(self.openViewpage, True, "json/json.html", "json/json.js",
                                               "var jsonData=`%s`" % convertJsTemplate(fmt))
-                        results.append(ResultItem("在JSON视图中打开", "使用默认浏览器", "fmt_browser.png", action))
+                        results.append(
+                            ResultItem(self.meta_info, "在JSON视图中打开", "使用默认浏览器", "images/fmt_browser.png", action))
                         return results
                     elif clipText.startswith("<"):
                         dom = etree.fromstring(clipText.encode("utf-8"))  # or xml.dom.minidom.parseString(xml_string)
                         fmt = etree.tostring(dom, pretty_print=True).decode("utf-8")
-                        results.append(ResultItem("复制格式化后的XML文本", fmt, "fmt_format.png",
+                        results.append(ResultItem(self.meta_info, "复制格式化后的XML文本", fmt, "images/fmt_format.png",
                                                   ResultAction(clipboard.setText, True, fmt)))
-                        action = ResultAction(self.openViewpage, True, "view/xml/xml.html", "view/xml/xml.js",
+                        action = ResultAction(self.openViewpage, True, "xml/xml.html", "xml/xml.js",
                                               "var xmlData=`%s`" % convertJsTemplate(fmt))
-                        results.append(ResultItem("在浏览器中查看XML结构", "使用默认浏览器", "fmt_browser.png", action))
+                        results.append(
+                            ResultItem(self.meta_info, "在浏览器中查看XML结构", "使用默认浏览器", "images/fmt_browser.png", action))
                         return results
                     elif self.sqlHelper.isSql(clipText):
                         fmt = self.sqlHelper.format(clipText)
-                        results.append(ResultItem("复制格式化后的SQL", fmt, "fmt_format.png",
+                        results.append(ResultItem(self.meta_info, "复制格式化后的SQL", fmt, "images/fmt_format.png",
                                                   ResultAction(clipboard.setText, True, fmt)))
                         zipped = self.sqlHelper.mini(clipText)
-                        results.append(ResultItem("复制压缩后的SQL", zipped, "fmt_zip.png",
+                        results.append(ResultItem(self.meta_info, "复制压缩后的SQL", zipped, "images/fmt_zip.png",
                                                   ResultAction(clipboard.setText, True, zipped)))
-                        action = ResultAction(self.openViewpage, True, "view/code/code.html", "view/code/code.js",
+                        action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                               "var inputLan='sql',textData=`%s`" % convertJsTemplate(fmt))
-                        results.append(ResultItem("在浏览器中查看SQL", "使用默认浏览器", "fmt_browser.png", action))
+                        results.append(
+                            ResultItem(self.meta_info, "在浏览器中查看SQL", "使用默认浏览器", "images/fmt_browser.png", action))
                         return results
                 except BaseException as e:
                     print(e)
@@ -74,9 +79,9 @@ class FormatterPlugin(AbstractPlugin):
             for cmd in self.commands:
                 action = ResultAction(self.api.change_query, False, "%s %s" % (keyword, cmd))
                 if cmd == "view":
-                    results.append(ResultItem(cmd, clipText, "fmt_cmd.png", action))
+                    results.append(ResultItem(self.meta_info, cmd, clipText, "images/fmt_cmd.png", action))
                 else:
-                    results.append(ResultItem(cmd, self.commands[cmd], "fmt_cmd.png", action))
+                    results.append(ResultItem(self.meta_info, cmd, self.commands[cmd], "images/fmt_cmd.png", action))
             return results
         else:
             fmt, cmddesc = None, self.commands.get(text)
@@ -85,24 +90,26 @@ class FormatterPlugin(AbstractPlugin):
             elif text == "adq":
                 fmt = '"' + re.sub("\n", "\"+\n\"", clipText) + '"'
             elif text == "view":
-                action = ResultAction(self.openViewpage, True, "view/code/code.html", "view/code/code.js",
+                action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                       "var textData=`%s`" % convertJsTemplate(clipText))
-                results.append(ResultItem("在代码视图中打开", clipText, "fmt_browser.png", action))
+                results.append(ResultItem(self.meta_info, "在代码视图中打开", clipText, "images/fmt_browser.png", action))
                 # TODO json sql
             else:
                 for cmd in self.commands:
                     action = ResultAction(self.api.change_query, False, "%s %s" % (keyword, cmd))
                     if cmd == "view":
-                        results.append(ResultItem(cmd, clipText, "fmt_cmd.png", action))
+                        results.append(ResultItem(self.meta_info, cmd, clipText, "images/fmt_cmd.png", action))
                     else:
-                        results.append(ResultItem(cmd, self.commands[cmd], "fmt_cmd.png", action))
+                        results.append(
+                            ResultItem(self.meta_info, cmd, self.commands[cmd], "images/fmt_cmd.png", action))
 
             if fmt:
                 action = ResultAction(clipboard.setText, True, fmt)
-                results.append(ResultItem("复制%s后的文本" % cmddesc, fmt, "fmt_copy.png", action))
-                action = ResultAction(self.openViewpage, True, "view/code/code.html", "view/code/code.js",
+                results.append(ResultItem(self.meta_info, "复制%s后的文本" % cmddesc, fmt, "images/fmt_copy.png", action))
+                action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                       "var textData=`%s`" % convertJsTemplate(fmt))
-                results.append(ResultItem("在浏览器中查看%s后的文本" % cmddesc, fmt, "fmt_browser.png", action))
+                results.append(
+                    ResultItem(self.meta_info, "在浏览器中查看%s后的文本" % cmddesc, fmt, "images/fmt_browser.png", action))
         return results
 
     def openViewpage(self, page, dataFile, text):
@@ -112,7 +119,7 @@ class FormatterPlugin(AbstractPlugin):
 
 
 class SQLHelper:
-    fts = {"select", "update", "insert", "delete", "drop", "create", "alter"};
+    fts = {"select", "update", "insert", "delete", "drop", "create", "alter"}
     tks = {"from", "left", "right", "inner", "on", "where", "group", "union", "order"}
     keepTokens, features = fts.union(tks), fts
 
@@ -125,7 +132,7 @@ class SQLHelper:
         return False
 
     def format(self, text):
-        text = re.sub(r"([\(\),])", " \1 ", text)
+        text = re.sub(r"([(),])", " \1 ", text)
         text = re.sub("\n", " ", text)
         tokens = re.split(r"\s+", text)
         result = ""
@@ -155,7 +162,8 @@ class SQLHelper:
                     preSpace = True
         return result
 
-    def mini(self, text):
+    @staticmethod
+    def mini(text):
         text = re.sub(r"\s*,", ", ", text)
         text = re.sub(r"\n", " ", text)
         return re.sub(r"\s{2,}", " ", text)
