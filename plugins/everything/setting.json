@@ -1,3 +1,4 @@
 {
-    "everything_query_max":50
+  "everything_query_max": 100,
+  "system_icon": false
 }

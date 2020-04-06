@@ -11,7 +11,7 @@ from result_model import ResultItem, ResultAction
 class SSJPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("随手记", "快速记录想法到markdown文件中，支持多文件。", "images/ssj_icon.png",
                            ["sj"], False)
-    commands = {"show", "del"}
+    commands = ("show", "del")
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
@@ -40,7 +40,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
         doc_matchs, total_match = [], False
         if doc_search:
             for doc in os.listdir(self.doc_root):
-                if doc.find(doc_search) > -1 and doc.endswith(".md") and not os.path.isdir(doc):
+                if doc.endswith(".md") and not os.path.isdir(doc) and str(doc[0:-3]).find(doc_search) > -1:
                     doc_matchs.append(doc)
                     if doc == doc_search + ".md":
                         total_match = True
@@ -123,4 +123,4 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
     def deleteDoc(self, doc):
         shutil.move(os.path.join(self.doc_root, doc),
                     os.path.join(self.doc_root, ".delete", str(int(datetime.now().timestamp())) + "-" + doc))
-        self.api.show_message("随手记: 删除文档", doc, QIcon("images/ssj_delete.png"), 1000)
+        self.api.show_message("随手记: 删除文档", doc, QIcon(os.path.join(self.meta_info.path, "images/ssj_delete.png")), 1000)

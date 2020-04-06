@@ -2,8 +2,9 @@ import os
 import ctypes
 from ctypes.wintypes import *
 
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QIcon
+from PyQt5.QtWidgets import QFileIconProvider
 
 from file_icon import file_icons
 from result_model import ResultItem, ResultAction
@@ -31,43 +32,48 @@ EVERYTHING_SORT_NAME_ASCENDING = 1
 EVERYTHING_SORT_NAME_DESCENDING = 2
 
 
+def open_file(file, plugin_info, api):
+    try:
+        os.startfile(file)
+    except BaseException as e:
+        api.show_message("无法打开文件", str(e),
+                         QIcon(os.path.join(plugin_info.path, "images/everything_error.png")), 1000)
+
+
 class FileResultItem(ResultItem):
-    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api):
+    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api, system_icon=False):
         super().__init__(plugin_info)
         self.title = fileName
         self.subTitle = fullPath
-        self.api = api
 
-        if isDir:
-            self.icon = file_icons["folder"]
+        if system_icon:
+            provider = QFileIconProvider()
+            self.icon = provider.icon(QFileInfo(fullPath))
         else:
-            self.icon = file_icons["*"]
-            doti = fileName.rfind(".")
-            if doti > -1:
-                ext = str(fileName[doti + 1:])
-                if file_icons.get(ext):
-                    self.icon = file_icons[ext]
-
-        self.icon = os.path.join("images", "icons", self.icon + ".svg")
-        self.action = ResultAction(self.openFile, True)
-
-    def openFile(self):
-        try:
-            os.startfile(self.subTitle)
-        except BaseException as e:
-            self.api.show_message("无法打开文件", str(e), QIcon("images/everything_error.png"), 1000)
+            if isDir:
+                self.icon = file_icons["folder"]
+            else:
+                self.icon = file_icons["*"]
+                doti = fileName.rfind(".")
+                if doti > -1:
+                    ext = str(fileName[doti + 1:])
+                    if file_icons.get(ext):
+                        self.icon = file_icons[ext]
+            self.icon = os.path.join("images", "icons", self.icon + ".svg")
+        self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
 
 
 class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token, api, plugin_info, query_max=50):
+    def __init__(self, parent, text, token, api, plugin_info, query_max=50, system_icon=False):
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
         self.token = token
         self.api = api
         self.plugin_info = plugin_info
         self.query_max = query_max
+        self.system_icon = system_icon
 
     @staticmethod
     def getFileName(path: str):
@@ -76,9 +82,8 @@ class AsyncSearchThread(QThread):
     def run(self):
         try:
             everything_dll.Everything_SetSearchW(self.text)
-            everything_dll.Everything_SetRequestFlags(
-                EVERYTHING_REQUEST_FILE_NAME | EVERYTHING_REQUEST_PATH)
-            everything_dll.Everything_SetMax(self.query_max)
+            if self.query_max:
+                everything_dll.Everything_SetMax(self.query_max)
             everything_dll.Everything_QueryW(True)
             num_results = everything_dll.Everything_GetNumResults()
             fullPath = ctypes.create_unicode_buffer(500)
@@ -86,12 +91,20 @@ class AsyncSearchThread(QThread):
             for i in range(num_results):
                 everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 490)
                 path = ctypes.wstring_at(fullPath)
-                results.append(
-                    FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
-                                   self.api))
+                if self.system_icon:
+                    results.append(
+                        FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, False,
+                                       self.api, True))
+                else:
+                    results.append(
+                        FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
+                                       self.api))
             self.sinOut.emit(self.token, results)
         except BaseException as e:
             print(e)
+
+
+global everything_dll
 
 
 class EverythingPlugin(AbstractPlugin, SettingInterface):
@@ -110,5 +123,7 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
     def query(self, keyword, text, token=None, parent=None):
         results = []
         if token:
-            return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info)
+            return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
+                                         self.get_setting("everything_query_max"),
+                                         self.get_setting("system_icon"))
         return results

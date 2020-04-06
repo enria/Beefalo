@@ -34,7 +34,7 @@ class ResultListModel(QAbstractListModel):
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(itemDatas) - 1)
             self.listItemData += itemDatas
             self.endInsertRows()
-            self.selected = 0 if self.rowCount() > 0 else -1
+        self.selected = 0 if self.rowCount() > 0 else -1
         self.adjustSize()
 
     def changeItems(self, itemDatas):
@@ -74,12 +74,7 @@ class WidgetDelegate(QStyledItemDelegate):
         self.theme = theme
 
     def paint(self, painter, option, index):
-        plugin_path = index.data().plugin_info.path
-        if index.data().root:
-            pm = QPixmap(index.data().icon)
-        else:
-            pm = QPixmap(os.path.join(plugin_path, index.data().icon))
-        pm = pm.scaled(32, 32, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
+
 
         if index.data().selected:
             background_brush = QBrush(QColor(self.theme["background"]), QtCore.Qt.SolidPattern)
@@ -90,11 +85,20 @@ class WidgetDelegate(QStyledItemDelegate):
         SubFont = QFont('微软雅黑', 9)
         SubFont.setWeight(SubFont.weight() - 2)
 
-        icon = QIcon(pm)
         headerText = index.data().title
         subText = index.data().subTitle
         iconsize = QSize(32, 32)
 
+        plugin_path = index.data().plugin_info.path
+        if isinstance(index.data().icon, QIcon):
+            icon = index.data().icon
+        else:
+            if index.data().root:
+                pm = QPixmap(index.data().icon)
+            else:
+                pm = QPixmap(os.path.join(plugin_path, index.data().icon))
+            pm = pm.scaled(32, 32, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
+            icon = QIcon(pm)
         iconRect = QRect(7, option.rect.top() + 7, 32, 32)
         headerRect = QRect(48, iconRect.top() - 3, option.rect.width() - 48, 21)
         subheaderRect = QRect(48, iconRect.top() + 18, option.rect.width() - 48, 16)
