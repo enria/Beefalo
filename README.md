@@ -6,22 +6,24 @@
 
 Wox的功能，目前已经实现了我需要的部分，包括：
 + 网页搜索
+![网页搜索](https://pic.downk.cc/item/5e8bee29504f4bcb04c1742c.gif)
 + 本地文件查找（基于Everything）
+![本地文件查找](https://pic.downk.cc/item/5e8bee29504f4bcb04c1742e.gif)
 + 查单词（使用有道云API）
+![查单词](https://pic.downk.cc/item/5e8bee29504f4bcb04c17423.gif)
 + 插件提示
 
 把我原来给Wox写的插件也做了转化，包括：
-+ 随手记
-+ Formatter
++ [随手记](https://github.com/enria/Wox.Plugin.SSJ)
++ [Formatter](https://github.com/enria/Wox.Plugin.Formatter)
 
 另外，还实现了一些比较方便的功能：
 + 主题切换
-+ 插件列表  
-
-自己抄了几个Visual Studio Code的主题。
 ![主题列表](https://pic.downk.cc/item/5e88ca7c504f4bcb04452435.gif)
++ 插件列表
+![插件列表](https://pic.downk.cc/item/5e8bee29504f4bcb04c17428.gif)
 
-目前的功能都只是为了自已实现的，对于开源工作，还有许多点需要做：
+
+目前的功能都只是针对自已的需求实现的，为了其他用户使用，还有许多点需要做：
 1. 打包，实现安装
-2. 插件设计重构，方便插件编写
-3. 设置界面
+2. 设置界面
