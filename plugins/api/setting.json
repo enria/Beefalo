@@ -1,0 +1,24 @@
+{
+  "documents": {
+    "vue": {
+      "url": "https://cn.vuejs.org/v2/api/",
+      "section_selector": "a.headerlink",
+      "icon": "images/api_vue.png",
+      "local": "C:\\Users\\13972\\Downloads\\vuejs_api.html",
+      "content": {
+        "title": "ele.attrs[\"title\"]",
+        "url": "ele.attrs[\"href\"]"
+      }
+    },
+    "ant": {
+      "url": "https://ant.design",
+      "section_selector": ".main-menu-inner a",
+      "icon": "images/api_ant.svg",
+      "local": "C:\\Users\\13972\\Downloads\\ant_design.html",
+      "content": {
+        "title": "ele.get_text()",
+        "url": "ele.attrs[\"href\"]"
+      }
+    }
+  }
+}

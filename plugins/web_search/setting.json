@@ -1,6 +1,6 @@
 {
   "engines": {
-    "g": {
+    "*": {
       "name": "Google",
       "icon": "images/web_search_google.png",
       "query": "https://www.google.com/search?q={text}",

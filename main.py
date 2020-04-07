@@ -68,7 +68,8 @@ class BeefaloWidget(QWidget, SettingInterface):
                     except BaseException as e:
                         pass
 
-        api = ContextApi(self.set_input_text, sys_tray.showMessage, self.change_theme, self.plugin_types)
+        api = ContextApi(self.set_input_text, sys_tray.showMessage, self.change_theme, self.plugin_types, self,
+                         self.get_theme)
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
@@ -136,6 +137,9 @@ class BeefaloWidget(QWidget, SettingInterface):
     def change_theme(self, mainTheme, highlightItem):
         self.setStyleSheet(mainTheme)
         self.delegate.theme = highlightItem
+
+    def get_theme(self):
+        return self.delegate.theme
 
     def add_global_hotkey(self):
         self.hotKeys.sinOut.connect(self.change_visible)

@@ -108,7 +108,7 @@ global everything_dll
 
 class EverythingPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_search.png",
-                           ["*"], True)
+                           ["find"], True)
 
     def __init__(self, api: ContextApi):
         super().__init__()
@@ -121,8 +121,8 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
-        if token:
+        if text.strip():
             return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
                                          self.get_setting("everything_query_max"),
                                          self.get_setting("system_icon"))
-        return results
+        return results, None
