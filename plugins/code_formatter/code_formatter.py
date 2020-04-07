@@ -84,7 +84,7 @@ class FormatterPlugin(AbstractPlugin):
                     results.append(ResultItem(self.meta_info, cmd, self.commands[cmd], "images/fmt_cmd.png", action))
             return results
         else:
-            fmt, cmddesc = None, self.commands.get(text)
+            fmt, cmd_desc = None, self.commands.get(text)
             if text == "rmn":
                 fmt = re.sub("\n", " ", clipText)
             elif text == "adq":
@@ -105,11 +105,11 @@ class FormatterPlugin(AbstractPlugin):
 
             if fmt:
                 action = ResultAction(clipboard.setText, True, fmt)
-                results.append(ResultItem(self.meta_info, "复制%s后的文本" % cmddesc, fmt, "images/fmt_copy.png", action))
+                results.append(ResultItem(self.meta_info, "复制%s后的文本" % cmd_desc, fmt, "images/fmt_copy.png", action))
                 action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                       "var textData=`%s`" % convertJsTemplate(fmt))
                 results.append(
-                    ResultItem(self.meta_info, "在浏览器中查看%s后的文本" % cmddesc, fmt, "images/fmt_browser.png", action))
+                    ResultItem(self.meta_info, "在浏览器中查看%s后的文本" % cmd_desc, fmt, "images/fmt_browser.png", action))
         return results
 
     def openViewpage(self, page, dataFile, text):

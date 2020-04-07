@@ -6,8 +6,8 @@ import time
 import ctypes
 import re
 import importlib
-from win32process import SuspendThread, ResumeThread
 import win32con
+from win32process import SuspendThread, ResumeThread
 
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
 from PyQt5.QtGui import QCursor, QKeySequence, QIcon
@@ -15,23 +15,27 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, Q
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
 
 sys.path.append("plugin")
-from plugin_api import AbstractPlugin, ContextApi
+from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo
 from result_list import ResultListModel, WidgetDelegate
 
 from keyboard import Hotkey
 
 
-class WoxWidget(QWidget):
+class BeefaloWidget(QWidget, SettingInterface):
+    meta_info = PluginInfo()
+    meta_info.path = "."
+
     def __init__(self, root_app):
         super().__init__()
         self.app = root_app
 
         self.result_model = ResultListModel(self)
+        self.result_model.sinOut.connect(self.adjust_size)
         self.ws_listview = QListView()
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.delegate = WidgetDelegate()
 
-        self.hotKeys = Hotkey(self)
+        self.hotKeys = Hotkey(self.get_setting("hotkeys"))
         self.add_global_hotkey()
 
         self.plugins = {"*": []}
@@ -45,6 +49,8 @@ class WoxWidget(QWidget):
         self.debounce_thread.sinOut.connect(self.async_change_result)
         self.debounce_thread.start()
 
+        self.result_size = min(10, max(4, self.get_setting("result_size")))
+        self.result_item_height = self.delegate.sizeHint(None, None).height()
         self.init_ui()
 
     def load_plugins(self):
@@ -76,7 +82,7 @@ class WoxWidget(QWidget):
                 self.plugins["*"].append(plugin)
 
     def init_ui(self):
-        self.setGeometry(800, 66, 800, 66 + 46 * 8)
+        self.setGeometry(0, 0, 800, 66 + self.result_item_height * (self.result_size + 2))
         self.setWindowTitle('Beefalo')
 
         qr = self.frameGeometry()
@@ -117,6 +123,16 @@ class WoxWidget(QWidget):
         self.show()
         self.activateWindow()
 
+    def adjust_size(self):
+        cnt = self.result_model.rowCount()
+        height = self.result_item_height
+        if cnt:
+            self.ws_listview.setMaximumHeight(min(cnt, self.result_size) * height + 10)
+            self.setFixedHeight(min(cnt, self.result_size) * height + 66 + 10)
+        else:
+            self.ws_listview.setMaximumHeight(min(cnt, self.result_size) * height)
+            self.setFixedHeight(min(cnt, self.result_size) * height + 66)
+
     def change_theme(self, mainTheme, highlightItem):
         self.setStyleSheet(mainTheme)
         self.delegate.theme = highlightItem
@@ -128,6 +144,8 @@ class WoxWidget(QWidget):
 
         QShortcut(QKeySequence("Up"), self, self.selected_up)
         QShortcut(QKeySequence("Down"), self, self.selected_down)
+        QShortcut(QKeySequence("PgUp"), self, self.selected_page_up)
+        QShortcut(QKeySequence("PgDown"), self, self.selected_page_down)
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def change_visible(self):
@@ -144,16 +162,30 @@ class WoxWidget(QWidget):
         self.setVisible(True)
 
     def selected_up(self):
-        if self.result_model.selected:
-            self.handle_result_peek(self.result_model.createIndex(self.result_model.selected - 1, 0))
-        elif self.result_model.rowCount() > 1:
-            self.handle_result_peek(self.result_model.createIndex(self.result_model.rowCount() - 1, 0))
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_peek(
+            self.result_model.createIndex((self.result_model.selected - 1) % self.result_model.rowCount(), 0))
 
     def selected_down(self):
-        if self.result_model.selected < self.result_model.rowCount() - 1:
-            self.handle_result_peek(self.result_model.createIndex(self.result_model.selected + 1, 0))
-        elif self.result_model.rowCount() > 1:
-            self.handle_result_peek(self.result_model.createIndex(0, 0))
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_peek(
+            self.result_model.createIndex((self.result_model.selected + 1) % self.result_model.rowCount(), 0))
+
+    def selected_page_up(self):
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_peek(
+            self.result_model.createIndex(
+                (self.result_model.selected - self.result_size) % self.result_model.rowCount(), 0))
+
+    def selected_page_down(self):
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_peek(
+            self.result_model.createIndex(
+                (self.result_model.selected + self.result_size) % self.result_model.rowCount(), 0))
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -198,7 +230,7 @@ class WoxWidget(QWidget):
 class DebounceThread(QThread):
     sinOut = pyqtSignal([list])
 
-    def __init__(self, view: 'WoxWidget'):
+    def __init__(self, view: 'BeefaloWidget'):
         super(DebounceThread, self).__init__(view.thread())
         self.view = view
         self.work = False
@@ -223,27 +255,29 @@ class DebounceThread(QThread):
                 query = self.view.ws_input.text()
                 self.view.token = str(uuid.uuid1())
                 if len(query.strip()):
-                    pluginMath = re.match(r"(.+?)\s+(.*)", query)
+                    pluginMath = re.match(r"(\w+)(\s*)(.*)", query)
                     matched_plugins = []
-                    keyword, text = "", ""
-                    if pluginMath:
-                        groups = pluginMath.groups()
-                        keyword, text = groups[0], groups[1]
-                        matched_plugins = self.view.plugins.get(keyword)
+                    groups = pluginMath.groups()
+                    if pluginMath and self.view.plugins.get(groups[0]):
+                        keyword, text = groups[0], groups[2]
+                        matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
+
                     if not matched_plugins:
-                        keyword, text = "*", query
-                        matched_plugins = self.view.plugins["*"]
+                        matched_plugins = [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
+                    elif not groups[1]:
+                        matched_plugins += [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
 
                     if matched_plugins:
-                        for pli in matched_plugins:
-                            if pli.meta_info.async_result:
-                                item, asyncThread = pli.query(keyword, text, self.view.token, self.obj)
+                        for matched in matched_plugins:
+                            plugin, keyword, text = matched
+                            if plugin.meta_info.async_result:
+                                item, asyncThread = plugin.query(keyword, text, self.view.token, self.obj)
                                 result += item
                                 if asyncThread:
                                     asyncThread.sinOut.connect(self.view.async_add_results)
                                     asyncThread.start()
                             else:
-                                result += pli.query(keyword, text)
+                                result += plugin.query(keyword, text)
                 self.sinOut.emit(result)
                 self.suspend()
             else:
@@ -262,17 +296,18 @@ global sys_tray
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-
     sys_tray = QSystemTrayIcon(app)
-    ex = WoxWidget(app)
+    window = BeefaloWidget(app)
+
     sys_tray.setIcon(QIcon("images/金牛.png"))  # 设置托盘图标
-    tpMenu = QMenu()
-    a1 = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
-    a1.triggered.connect(ex.change_visible)
-    a2 = QAction(u'退出', app)  # 添加一级菜单动作选项(退出程序)
-    a2.triggered.connect(app.exit)
-    tpMenu.addAction(a1)
-    tpMenu.addAction(a2)
-    sys_tray.setContextMenu(tpMenu)  # 把tpMenu设定为托盘的右键菜单
+    sys_tray_menu = QMenu()
+    show_action = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
+    show_action.triggered.connect(window.change_visible)
+    exit_action = QAction(u'退出', app)  # 添加一级菜单动作选项(退出程序)
+    exit_action.triggered.connect(app.exit)
+    sys_tray_menu.addAction(show_action)
+    sys_tray_menu.addAction(exit_action)
+    sys_tray.setContextMenu(sys_tray_menu)  # 把tpMenu设定为托盘的右键菜单
     sys_tray.show()  # 显示托盘
+
     sys.exit(app.exec_())

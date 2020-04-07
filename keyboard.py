@@ -17,19 +17,17 @@ class Hotkey(QThread, SettingInterface):
     meta_info = PluginInfo()
     meta_info.path = ""
 
-    def __init__(self, view):
-        super(Hotkey, self).__init__(view)
-        SettingInterface.__init__(self)
-        self.view = view
+    def __init__(self, key_map):
+        super(Hotkey, self).__init__()
+        self.key_map = key_map
 
     def run(self):
         user32 = ctypes.windll.user32
         param_map = {}
         try:
             param = 369
-            key_map = self.get_setting("hotkeys")
-            for key in key_map:
-                to_query = key_map[key]
+            for key in self.key_map:
+                to_query = self.key_map[key]
                 keys = key.split("+")
                 param += 1
                 if not user32.RegisterHotKey(None, param, mod_keys[keys[0]], ord(keys[1])):

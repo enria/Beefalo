@@ -19,7 +19,7 @@ QListView#ResultListView{
 QScrollBar::handle:vertical
 {
     width:9px;
-    background:#424341;
+    background:#414339;
     min-height:10px;
 }
 QScrollBar:vertical{width:9px;background:rgba(0,0,0,0%);margin:0;padding-top:0px;padding-bottom:0px;}

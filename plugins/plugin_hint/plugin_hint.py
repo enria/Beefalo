@@ -22,7 +22,7 @@ class PluginHintPlugin(AbstractPlugin):
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
 
-    def query(self, keyword, text):
+    def query(self, keyword, text, token=None, parent=None):
         results = []
         if keyword and keyword != "*":
             for plugin in self.api.plugin_types:
@@ -33,7 +33,7 @@ class PluginHintPlugin(AbstractPlugin):
         else:
             for plugin in self.api.plugin_types:
                 for key in plugin.meta_info.keywords:
-                    if key.startswith(text):
+                    if key.startswith(text) and key != text:
                         results.append(self.getPluginItem(plugin, key + " "))
                         break
         return results

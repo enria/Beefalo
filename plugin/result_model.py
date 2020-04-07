@@ -1,12 +1,4 @@
-import os
-
-from PyQt5.QtCore import QAbstractListModel, QModelIndex
 from plugin_api import PluginInfo
-
-from PyQt5 import Qt, QtCore
-from PyQt5.QtCore import QSize, QRect, QPoint
-from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QFontMetrics, QIcon
-from PyQt5.QtWidgets import QStyledItemDelegate
 
 
 class ResultAction:
@@ -26,4 +18,3 @@ class ResultItem:
         self.action = action
         self.selected = False
         self.root = root
-

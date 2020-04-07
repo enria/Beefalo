@@ -33,8 +33,9 @@ class ThemePlugin(AbstractPlugin, SettingInterface):
     def query(self, keyword, text, token=None, parent=None):
         results = []
         for theme in self.themes:
-            action = ResultAction(self.change_theme, False, self.themes[theme])
-            results.append(ResultItem(self.meta_info, theme, "", "images/theme_icon.png", action))
+            if text.lower() in self.themes[theme].name.lower():
+                action = ResultAction(self.change_theme, False, self.themes[theme])
+                results.append(ResultItem(self.meta_info, theme, "", "images/theme_icon.png", action))
         return results
 
     def change_theme(self, theme):

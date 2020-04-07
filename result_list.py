@@ -1,6 +1,6 @@
 import os
 
-from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt
+from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
 from PyQt5.QtWidgets import QStyledItemDelegate
 
@@ -8,6 +8,8 @@ from result_model import ResultItem
 
 
 class ResultListModel(QAbstractListModel):
+    sinOut = pyqtSignal()
+
     def __init__(self, view):
         super().__init__()
         self.view = view
@@ -27,23 +29,25 @@ class ResultListModel(QAbstractListModel):
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
             self.listItemData.append(itemData)
             self.endInsertRows()
-            self.adjustSize()
+            self.sinOut.emit()
 
-    def addItems(self, itemDatas: list):
+    def addItems(self, itemDatas: list, change_size=True):
         if itemDatas:
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(itemDatas) - 1)
             self.listItemData += itemDatas
             self.endInsertRows()
         self.selected = 0 if self.rowCount() > 0 else -1
-        self.adjustSize()
+        if change_size:
+            self.sinOut.emit()
 
     def changeItems(self, itemDatas):
+        change_size = len(itemDatas) != self.rowCount()
         self.clear()
-        self.addItems(itemDatas)
+        self.addItems(itemDatas, change_size)
 
     def deleteItem(self, index):
         del self.listItemData[index]
-        self.adjustSize()
+        self.sinOut.emit()
 
     def getItem(self, index):
         if -1 < index < len(self.listItemData):
@@ -53,22 +57,13 @@ class ResultListModel(QAbstractListModel):
         self.beginRemoveRows(QModelIndex(), 0, len(self.listItemData) - 1)
         self.listItemData = []
         self.endRemoveRows()
-        self.adjustSize()
-
-    def adjustSize(self):
-        cnt = self.rowCount()
-        if cnt:
-            self.view.ws_listview.setMaximumHeight(min(cnt, 6) * 46 + 10)
-            self.view.setFixedHeight(min(cnt, 6) * 46 + 66 + 10)
-        else:
-            self.view.ws_listview.setMaximumHeight(min(cnt, 6) * 46)
-            self.view.setFixedHeight(min(cnt, 6) * 46 + 66)
 
 
 DEFAULT_COLOR = {"color": "#000000", "background": "#4f6180", "highlight": "#000000"}
 
 
 class WidgetDelegate(QStyledItemDelegate):
+
     def __init__(self, theme=DEFAULT_COLOR):
         super(WidgetDelegate, self).__init__()
         self.theme = theme

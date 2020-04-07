@@ -107,7 +107,7 @@ global everything_dll
 
 
 class EverythingPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_icon.gif",
+    meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_search.png",
                            ["*"], True)
 
     def __init__(self, api: ContextApi):
