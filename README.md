@@ -5,11 +5,11 @@
 使用的过程中感觉Wox的bug还挺多的，用Python写插件给的接口又不够用，而且Wox项目也没什么人维护，所以就有了使用Python另起炉灶的想法。
 
 Wox的功能，目前已经实现了我需要的部分，包括：
-+ 网页搜索
++ 网页搜索  
 ![网页搜索](https://pic.downk.cc/item/5e8bee29504f4bcb04c1742c.gif)
-+ 本地文件查找（基于Everything）
++ 本地文件查找（基于Everything）  
 ![本地文件查找](https://pic.downk.cc/item/5e8bee29504f4bcb04c1742e.gif)
-+ 查单词（使用有道云API）
++ 查单词（使用有道云API）  
 ![查单词](https://pic.downk.cc/item/5e8bee29504f4bcb04c17423.gif)
 + 插件提示
 
@@ -18,9 +18,9 @@ Wox的功能，目前已经实现了我需要的部分，包括：
 + [Formatter](https://github.com/enria/Wox.Plugin.Formatter)
 
 另外，还实现了一些比较方便的功能：
-+ 主题切换
++ 主题切换  
 ![主题列表](https://pic.downk.cc/item/5e88ca7c504f4bcb04452435.gif)
-+ 插件列表
++ 插件列表  
 ![插件列表](https://pic.downk.cc/item/5e8bee29504f4bcb04c17428.gif)
 
 
