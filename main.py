@@ -261,10 +261,11 @@ class DebounceThread(QThread):
                 if len(query.strip()):
                     pluginMath = re.match(r"(\w+)(\s*)(.*)", query)
                     matched_plugins = []
-                    groups = pluginMath.groups()
-                    if pluginMath and self.view.plugins.get(groups[0]):
-                        keyword, text = groups[0], groups[2]
-                        matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
+                    if pluginMath:
+                        groups = pluginMath.groups()
+                        if self.view.plugins.get(groups[0]):
+                            keyword, text = groups[0], groups[2]
+                            matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
 
                     if not matched_plugins:
                         matched_plugins = [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
