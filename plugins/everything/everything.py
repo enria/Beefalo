@@ -6,10 +6,9 @@ from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QIcon
 from PyQt5.QtWidgets import QFileIconProvider
 
-from file_icon import file_icons
 from result_model import ResultItem, ResultAction
-
 from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi
+from file_icon import file_icons
 
 EVERYTHING_REQUEST_FILE_NAME = 0x00000001
 EVERYTHING_REQUEST_PATH = 0x00000002

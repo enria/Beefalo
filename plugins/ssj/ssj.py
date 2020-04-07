@@ -4,6 +4,7 @@ import re
 from datetime import datetime
 
 from PyQt5.QtGui import QIcon, QGuiApplication
+
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
 from result_model import ResultItem, ResultAction
 

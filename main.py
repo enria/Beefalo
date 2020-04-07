@@ -9,8 +9,7 @@ import importlib
 from win32process import SuspendThread, ResumeThread
 import win32con
 
-from PyQt5 import QtCore
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
 from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
@@ -100,14 +99,14 @@ class WoxWidget(QWidget):
 
         vly.addWidget(self.ws_input)
 
-        self.setWindowFlag(QtCore.Qt.ToolTip)
+        self.setWindowFlag(Qt.ToolTip)
 
         self.ws_listview.setModel(self.result_model)
         self.ws_listview.setMaximumHeight(0)
         self.ws_listview.setItemDelegate(self.delegate)
         self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
         self.ws_listview.clicked.connect(self.handle_result_selected)
-        self.ws_listview.setCursor(QCursor(QtCore.Qt.PointingHandCursor))
+        self.ws_listview.setCursor(QCursor(Qt.PointingHandCursor))
 
         vly.addWidget(self.ws_listview)
         vly.setContentsMargins(8, 10, 8, 10)

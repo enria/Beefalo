@@ -1,9 +1,7 @@
 import os
 import json
 
-from plugin_api import PluginInfo, SettingInterface
-
-from plugin_api import AbstractPlugin, ContextApi
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
 from result_model import ResultItem, ResultAction
 
 

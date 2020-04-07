@@ -2,7 +2,9 @@ import sys
 import ctypes
 import ctypes.wintypes
 import win32con
+
 from PyQt5.QtCore import QThread, pyqtSignal
+
 from plugin_api import SettingInterface, PluginInfo
 
 mod_keys = {"ctrl": win32con.MOD_CONTROL, "alt": win32con.MOD_ALT, "shift": win32con.MOD_SHIFT}
@@ -33,13 +35,11 @@ class Hotkey(QThread, SettingInterface):
                 if not user32.RegisterHotKey(None, param, mod_keys[keys[0]], ord(keys[1])):
                     raise RuntimeError
                 param_map[param] = to_query
-                # print(key, keys, to_query)
         except BaseException as e:
             print(e)
             print("应用已启动：快捷键被占用")
             self.view.app.exit()
             sys.exit()
-
         try:
             msg = ctypes.wintypes.MSG()
             while user32.GetMessageA(ctypes.byref(msg), None, 0, 0) != 0:

@@ -1,9 +1,9 @@
 import os
-from PyQt5.QtCore import QAbstractListModel, QModelIndex
-from PyQt5 import QtCore
-from PyQt5.QtCore import QSize, QRect, QPoint
+
+from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
 from PyQt5.QtWidgets import QStyledItemDelegate
+
 from result_model import ResultItem
 
 
@@ -75,19 +75,18 @@ class WidgetDelegate(QStyledItemDelegate):
 
     def paint(self, painter, option, index):
 
-
         if index.data().selected:
-            background_brush = QBrush(QColor(self.theme["background"]), QtCore.Qt.SolidPattern)
+            background_brush = QBrush(QColor(self.theme["background"]), Qt.SolidPattern)
             painter.fillRect(option.rect, background_brush)
 
         font = QFont('微软雅黑', 12)
         font.setWeight(60)
-        SubFont = QFont('微软雅黑', 9)
-        SubFont.setWeight(SubFont.weight() - 2)
+        sub_font = QFont('微软雅黑', 9)
+        sub_font.setWeight(sub_font.weight() - 2)
 
-        headerText = index.data().title
-        subText = index.data().subTitle
-        iconsize = QSize(32, 32)
+        title = index.data().title
+        sub_title = index.data().subTitle
+        icon_size = QSize(32, 32)
 
         plugin_path = index.data().plugin_info.path
         if isinstance(index.data().icon, QIcon):
@@ -97,27 +96,27 @@ class WidgetDelegate(QStyledItemDelegate):
                 pm = QPixmap(index.data().icon)
             else:
                 pm = QPixmap(os.path.join(plugin_path, index.data().icon))
-            pm = pm.scaled(32, 32, QtCore.Qt.IgnoreAspectRatio, QtCore.Qt.SmoothTransformation)
+            pm = pm.scaled(32, 32, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
             icon = QIcon(pm)
-        iconRect = QRect(7, option.rect.top() + 7, 32, 32)
-        headerRect = QRect(48, iconRect.top() - 3, option.rect.width() - 48, 21)
-        subheaderRect = QRect(48, iconRect.top() + 18, option.rect.width() - 48, 16)
+        icon_rect = QRect(7, option.rect.top() + 7, 32, 32)
+        header_rect = QRect(48, icon_rect.top() - 3, option.rect.width() - 48, 21)
+        sub_title_rect = QRect(48, icon_rect.top() + 18, option.rect.width() - 48, 16)
 
         color = self.theme["color"]
         if index.data().selected:
             color = self.theme["highlight"]
 
         painter.drawPixmap(
-            QPoint(iconRect.left(), iconRect.top()),
-            icon.pixmap(iconsize.width(), iconsize.height()))
+            QPoint(icon_rect.left(), icon_rect.top()),
+            icon.pixmap(icon_size.width(), icon_size.height()))
         painter.setFont(font)
         painter.setPen(QColor(color))
-        painter.drawText(headerRect, QtCore.Qt.AlignTop, headerText)
+        painter.drawText(header_rect, Qt.AlignTop, title)
 
-        painter.setFont(SubFont)
+        painter.setFont(sub_font)
         painter.setPen(QColor(color))
-        painter.drawText(subheaderRect, QtCore.Qt.AlignTop, subText)
+        painter.drawText(sub_title_rect, Qt.AlignTop, sub_title)
         # painter.restore()
 
-    def sizeHint(self, option, index: QtCore.QModelIndex) -> QSize:
+    def sizeHint(self, option, index: QModelIndex) -> QSize:
         return QSize(100, 46)
