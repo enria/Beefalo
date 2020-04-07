@@ -1,24 +1,8 @@
-from math import *
-
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
 from result_model import ResultItem, ResultAction
-
-
-def is_number(s):
-    try:
-        float(s)
-        return True
-    except ValueError:
-        pass
-
-    try:
-        import unicodedata
-        unicodedata.numeric(s)
-        return True
-    except (TypeError, ValueError):
-        pass
-
-    return False
+import math
+from inspect import isclass
+import numbers
 
 
 class CalculatorPlugin(AbstractPlugin):
@@ -27,12 +11,17 @@ class CalculatorPlugin(AbstractPlugin):
 
     def __init__(self, api: ContextApi):
         self.api = api
+        self.math_func = {'__builtins__': None}
+        for attr in dir(math):
+            attr_type = getattr(math, attr)
+            if (callable(attr_type) or isinstance(attr_type, numbers.Number)) and not isclass(attr_type):
+                self.math_func[attr] = attr_type
 
     def query(self, keyword, text, token=None, parent=None):
         try:
-            value = eval(text)
-            if is_number(value):
+            value = eval(text, self.math_func, {})
+            if isinstance(value, numbers.Number):
                 return [ResultItem(self.meta_info, str(value), text, "images/calculator_icon.png")]
-        except BaseException as e:
+        except:
             pass
         return []
