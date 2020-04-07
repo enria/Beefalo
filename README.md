@@ -19,7 +19,7 @@ Wox的功能，目前已经实现了我需要的部分，包括：
 
 另外，还实现了一些比较方便的功能：
 + 主题切换  
-![主题列表](https://pic.downk.cc/item/5e88ca7c504f4bcb04452435.gif)
+![主题列表](https://pic.downk.cc/item/5e8bf050504f4bcb04c2d078.gif)
 + 插件列表  
 ![插件列表](https://pic.downk.cc/item/5e8bee29504f4bcb04c17428.gif)
 
