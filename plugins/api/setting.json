@@ -3,21 +3,31 @@
     "vue": {
       "url": "https://cn.vuejs.org/v2/api/",
       "section_selector": "a.headerlink",
-      "icon": "images/api_vue.png",
-      "local": "C:\\Users\\13972\\Downloads\\vuejs_api.html",
+      "icon": "images/API_vue.png",
+      "local": "C:/Users/13972/Documents/Beefalo/apivuejs_api.html",
       "content": {
         "title": "ele.attrs[\"title\"]",
-        "url": "ele.attrs[\"href\"]"
+        "url": "'https://cn.vuejs.org/v2/api/'+ele.attrs[\"href\"]"
       }
     },
     "ant": {
       "url": "https://ant.design",
       "section_selector": ".main-menu-inner a",
-      "icon": "images/api_ant.svg",
-      "local": "C:\\Users\\13972\\Downloads\\ant_design.html",
+      "icon": "images/API_ant.svg",
+      "local": "C:/Users/13972/Documents/Beefalo/ant_design.html",
       "content": {
         "title": "ele.get_text()",
-        "url": "ele.attrs[\"href\"]"
+        "url": "'https://ant.design'+ele.attrs[\"href\"]"
+      }
+    },
+    "java": {
+      "url": "https://docs.oracle.com/javase/8/docs/api/allclasses-frame.html",
+      "section_selector": "li a",
+      "icon": "images/API_java.png",
+      "local": false,
+      "content": {
+        "title": "ele.get_text()",
+        "url": "'https://docs.oracle.com/javase/8/docs/api/'+ele.attrs[\"href\"]"
       }
     }
   }

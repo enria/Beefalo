@@ -29,14 +29,14 @@ class Dialog(QDialog):
     def __init__(self, title, text, plugin_info: PluginInfo, api: ContextApi):
         super(QDialog, self).__init__(api.main_window)
         theme = api.get_theme()
-        self.setWindowTitle(title)
-        self.resize(800, 500)
+        self.setWindowTitle("Beefalo Workflow: " + title)
+        self.resize(600, 400)
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
         editor = QTextEdit(self)
-        editor.setFont(QFont('Consolas', 14))
+        editor.setFont(QFont('Consolas', 12))
         editor.setText(text)
         editor.setStyleSheet('''
         QTextEdit{

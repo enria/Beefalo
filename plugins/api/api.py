@@ -28,7 +28,7 @@ def get_sections(config: APIConfig):
     sections = {}
     for ele in dom.select(config.selector):
         title, url = eval(config.content["title"]), eval(config.content["url"])
-        sections[title] = config.url + url
+        sections[title] = url
     return sections
 
 

@@ -41,6 +41,18 @@
       "icon": "images/web_search_codelf.png",
       "query": "https://unbug.github.io/codelf/#{text}",
       "home": "https://unbug.github.io/codelf"
+    },
+    "iconfont": {
+      "name": "iconfont",
+      "icon": "images/web_search_iconfont.png",
+      "query": "https://www.iconfont.cn/search/index?searchType=icon&q={text}",
+      "home": "https://www.iconfont.cn"
+    },
+    "easyicon": {
+      "name": "easyicon",
+      "icon": "images/web_search_easyicon.png",
+      "query": "http://www.easyicon.net/iconsearch/{text}",
+      "home": "http://www.easyicon.net"
     }
   }
 }

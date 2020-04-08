@@ -3,6 +3,7 @@ import requests
 import re
 import json
 
+from lxml import etree
 from PyQt5.QtCore import QThread, pyqtSignal
 
 from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin
@@ -18,8 +19,20 @@ class SearchEngine:
 
 
 class SearchSuggestion:
+    url = "http://suggestion.baidu.com/su"
+
     def __init__(self):
-        self.url = "http://suggestion.baidu.com/su"
+        pass
+
+    def suggest(self, text):
+        pass
+
+
+class BaiduSuggestion(SearchSuggestion):
+    url = "http://suggestion.baidu.com/su"
+
+    def __init__(self):
+        pass
 
     def suggest(self, text):
         try:
@@ -28,6 +41,41 @@ class SearchSuggestion:
                 sug_match = re.match(r".*(\[.*\]).*", resp.text)
                 if sug_match:
                     return json.loads(sug_match.groups()[0])
+        except BaseException as e:
+            print(e)
+        return []
+
+
+class GoogleSuggestion(SearchSuggestion):
+    url = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=en"
+
+    def __init__(self):
+        pass
+
+    def suggest(self, text):
+        try:
+            proxies = {"http": "http://127.0.0.1:8001"}
+            resp = requests.get(self.url, {"q": text}, proxies=proxies)
+            if resp.status_code == 200:
+                dom = etree.fromstring(resp.text.encode("utf-8"))
+                return dom.xpath('//suggestion//@data')
+        except BaseException as e:
+            print(e)
+        return []
+
+
+class BilibiliSuggestion(SearchSuggestion):
+    url = "https://s.search.bilibili.com/main/suggest?suggest_type=accurate"
+
+    def __init__(self):
+        pass
+
+    def suggest(self, text):
+        try:
+            resp = requests.get(self.url, {"term": text})
+            if resp.status_code == 200:
+                json_data = json.loads(resp.text)
+                return [json_data[item]["value"] for item in json_data]
         except BaseException as e:
             print(e)
         return []
@@ -76,6 +124,9 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png",
                            [], True)
 
+    suggestions = {"Google": GoogleSuggestion(), "Baidu": BaiduSuggestion(), "Bilibili": BilibiliSuggestion()}
+    default_suggest = "Google"
+
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
@@ -91,9 +142,10 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
     def query(self, keyword, text, token=None, parent=None):
         results = []
         if self.engines.get(keyword):
+            engine = self.engines[keyword]
             results.append(WebSearchResultItem(self.meta_info, self.engines[keyword], text))
-            if token:
-                return results, AsyncSuggestThread(self.meta_info, parent, self.suggestion, self.engines[keyword], text,
-                                                   token)
-
+            suggest = self.suggestions[engine.name] if self.suggestions.get(engine.name) else self.suggestions.get(
+                self.default_suggest)
+            return results, AsyncSuggestThread(self.meta_info, parent, suggest, self.engines[keyword], text,
+                                               token)
         return results

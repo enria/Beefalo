@@ -10,26 +10,6 @@ from result_model import ResultItem, ResultAction
 from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi
 from file_icon import file_icons
 
-EVERYTHING_REQUEST_FILE_NAME = 0x00000001
-EVERYTHING_REQUEST_PATH = 0x00000002
-EVERYTHING_REQUEST_FULL_PATH_AND_FILE_NAME = 0x00000004
-EVERYTHING_REQUEST_EXTENSION = 0x00000008
-EVERYTHING_REQUEST_SIZE = 0x00000010
-EVERYTHING_REQUEST_DATE_CREATED = 0x00000020
-EVERYTHING_REQUEST_DATE_MODIFIED = 0x00000040
-EVERYTHING_REQUEST_DATE_ACCESSED = 0x00000080
-EVERYTHING_REQUEST_ATTRIBUTES = 0x00000100
-EVERYTHING_REQUEST_FILE_LIST_FILE_NAME = 0x00000200
-EVERYTHING_REQUEST_RUN_COUNT = 0x00000400
-EVERYTHING_REQUEST_DATE_RUN = 0x00000800
-EVERYTHING_REQUEST_DATE_RECENTLY_CHANGED = 0x00001000
-EVERYTHING_REQUEST_HIGHLIGHTED_FILE_NAME = 0x00002000
-EVERYTHING_REQUEST_HIGHLIGHTED_PATH = 0x00004000
-EVERYTHING_REQUEST_HIGHLIGHTED_FULL_PATH_AND_FILE_NAME = 0x00008000
-
-EVERYTHING_SORT_NAME_ASCENDING = 1
-EVERYTHING_SORT_NAME_DESCENDING = 2
-
 
 def open_file(file, plugin_info, api):
     try:
@@ -65,7 +45,7 @@ class FileResultItem(ResultItem):
 class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token, api, plugin_info, query_max=50, system_icon=False):
+    def __init__(self, parent, text, token, api, plugin_info, query_max=50, system_icon=False, root=None):
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
         self.token = token
@@ -73,6 +53,7 @@ class AsyncSearchThread(QThread):
         self.plugin_info = plugin_info
         self.query_max = query_max
         self.system_icon = system_icon
+        self.root = root
 
     @staticmethod
     def getFileName(path: str):
@@ -80,24 +61,8 @@ class AsyncSearchThread(QThread):
 
     def run(self):
         try:
-            everything_dll.Everything_SetSearchW(self.text)
-            if self.query_max:
-                everything_dll.Everything_SetMax(self.query_max)
-            everything_dll.Everything_QueryW(True)
-            num_results = everything_dll.Everything_GetNumResults()
-            fullPath = ctypes.create_unicode_buffer(500)
-            results = []
-            for i in range(num_results):
-                everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 490)
-                path = ctypes.wstring_at(fullPath)
-                if self.system_icon:
-                    results.append(
-                        FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, False,
-                                       self.api, True))
-                else:
-                    results.append(
-                        FileResultItem(self.plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
-                                       self.api))
+            results = everything_query(self.root, self.text, self.query_max, self.plugin_info, self.api,
+                                       self.system_icon)
             self.sinOut.emit(self.token, results)
         except BaseException as e:
             print(e)
@@ -106,9 +71,34 @@ class AsyncSearchThread(QThread):
 global everything_dll
 
 
+def everything_query(root, text, query_max, plugin_info, api, system_icon):
+    if root:
+        everything_dll.Everything_SetSearchW(root + " " + text)
+    else:
+        everything_dll.Everything_SetSearchW(text)
+    if query_max:
+        everything_dll.Everything_SetMax(query_max)
+    everything_dll.Everything_QueryW(True)
+    num_results = everything_dll.Everything_GetNumResults()
+    fullPath = ctypes.create_unicode_buffer(500)
+    results = []
+    for i in range(num_results):
+        everything_dll.Everything_GetResultFullPathNameW(i, fullPath, 490)
+        path = ctypes.wstring_at(fullPath)
+        if system_icon:
+            results.append(
+                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, False,
+                               api, True))
+        else:
+            results.append(
+                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
+                               api))
+    return results
+
+
 class EverythingPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_search.png",
-                           ["find"], True)
+                           ["find", "*"], True)
 
     def __init__(self, api: ContextApi):
         super().__init__()
@@ -122,7 +112,11 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
     def query(self, keyword, text, token=None, parent=None):
         results = []
         if text.strip():
-            return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
-                                         self.get_setting("everything_query_max"),
-                                         self.get_setting("system_icon"))
+            if keyword and keyword != "*":
+                return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
+                                             self.get_setting("everything_query_max"),
+                                             self.get_setting("system_icon"))
+            else:
+                return everything_query(self.get_setting("link_root"), text, self.get_setting("everything_query_max"),
+                                        self.meta_info, self.api, self.get_setting("system_icon")), None
         return results, None
