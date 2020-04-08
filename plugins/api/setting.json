@@ -4,20 +4,20 @@
       "url": "https://cn.vuejs.org/v2/api/",
       "section_selector": "a.headerlink",
       "icon": "images/API_vue.png",
-      "local": "C:/Users/13972/Documents/Beefalo/apivuejs_api.html",
+      "local": "C:/Users/13972/Documents/Beefalo/api/vuejs_api.html",
       "content": {
-        "title": "ele.attrs[\"title\"]",
-        "url": "'https://cn.vuejs.org/v2/api/'+ele.attrs[\"href\"]"
+        "title": "ele.attrs['title']",
+        "url": "'https://cn.vuejs.org/v2/api/'+ele.attrs['href']"
       }
     },
     "ant": {
       "url": "https://ant.design",
       "section_selector": ".main-menu-inner a",
       "icon": "images/API_ant.svg",
-      "local": "C:/Users/13972/Documents/Beefalo/ant_design.html",
+      "local": "C:/Users/13972/Documents/Beefalo/api/ant_design.html",
       "content": {
         "title": "ele.get_text()",
-        "url": "'https://ant.design'+ele.attrs[\"href\"]"
+        "url": "'https://ant.design'+ele.attrs['href']"
       }
     },
     "java": {
@@ -27,7 +27,7 @@
       "local": false,
       "content": {
         "title": "ele.get_text()",
-        "url": "'https://docs.oracle.com/javase/8/docs/api/'+ele.attrs[\"href\"]"
+        "url": "'https://docs.oracle.com/javase/8/docs/api/'+ele.attrs['href']"
       }
     }
   }

@@ -21,13 +21,17 @@ class APIConfig(object):
 
 def get_sections(config: APIConfig):
     if not config.local:
-        resp = requests.get(config.url)
-        dom = BeautifulSoup(resp.text, "html.parser")
+        try:
+            resp = requests.get(config.url)
+            dom = BeautifulSoup(resp.text, "html.parser")
+        except:
+            return {}
     else:
         dom = BeautifulSoup(open(config.local, encoding="utf8"), "html.parser")
     sections = {}
     for ele in dom.select(config.selector):
-        title, url = eval(config.content["title"]), eval(config.content["url"])
+        title = eval(config.content["title"], {'__builtins__': None}, {'ele': ele})
+        url = eval(config.content["url"], {'__builtins__': None}, {'ele': ele})
         sections[title] = url
     return sections
 

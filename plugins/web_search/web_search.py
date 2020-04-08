@@ -19,7 +19,7 @@ class SearchEngine:
 
 
 class SearchSuggestion:
-    url = "http://suggestion.baidu.com/su"
+    url = ""
 
     def __init__(self):
         pass
@@ -48,14 +48,15 @@ class BaiduSuggestion(SearchSuggestion):
 
 class GoogleSuggestion(SearchSuggestion):
     url = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=en"
+    proxies = {"http": "http://127.0.0.1:8001"}
 
     def __init__(self):
         pass
 
     def suggest(self, text):
         try:
-            proxies = {"http": "http://127.0.0.1:8001"}
-            resp = requests.get(self.url, {"q": text}, proxies=proxies)
+
+            resp = requests.get(self.url, {"q": text}, proxies=self.proxies)
             if resp.status_code == 200:
                 dom = etree.fromstring(resp.text.encode("utf-8"))
                 return dom.xpath('//suggestion//@data')
@@ -76,6 +77,44 @@ class BilibiliSuggestion(SearchSuggestion):
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
                 return [json_data[item]["value"] for item in json_data]
+        except BaseException as e:
+            print(e)
+        return []
+
+
+class ZhihuSuggestion(SearchSuggestion):
+    url = "https://www.zhihu.com/api/v4/search/suggest"
+
+    def __init__(self):
+        pass
+
+    def suggest(self, text):
+        try:
+            resp = requests.get(self.url, {"q": text}, headers={"User-Agent": "PostmanRuntime/7.24.0"})
+            if resp.status_code == 200:
+                json_data = json.loads(resp.text)
+                return [item["query"] for item in json_data["suggest"]]
+        except BaseException as e:
+            print(e)
+        return []
+
+
+class WikiSuggestion(SearchSuggestion):
+    url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json"
+    proxies = {"https": "http://127.0.0.1:8001"}
+
+    def __init__(self):
+        pass
+
+    def suggest(self, text):
+        if not text.strip():
+            return []
+        try:
+            resp = requests.get(self.url, {"search": text}, headers={"User-Agent": "PostmanRuntime/7.24.0"},
+                                proxies=self.proxies)
+            if resp.status_code == 200:
+                json_data = json.loads(resp.text)
+                return json_data[1]
         except BaseException as e:
             print(e)
         return []
@@ -121,10 +160,13 @@ class AsyncSuggestThread(QThread):
 
 
 class WebSearchPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png",
-                           [], True)
+    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png", [], True)
 
-    suggestions = {"Google": GoogleSuggestion(), "Baidu": BaiduSuggestion(), "Bilibili": BilibiliSuggestion()}
+    suggestions = {"Google": GoogleSuggestion(),
+                   "Baidu": BaiduSuggestion(),
+                   "Bilibili": BilibiliSuggestion(),
+                   "知乎": ZhihuSuggestion(),
+                   "Wikipedia": WikiSuggestion()}
     default_suggest = "Google"
 
     def __init__(self, api: ContextApi):
@@ -132,20 +174,22 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
         self.api = api
         self.suggestion = SearchSuggestion()
         self.engines = self.get_setting("engines")
-        keys = []
+        keys = ["*"]
         for key in self.engines:
             info = self.engines[key]
             self.engines[key] = SearchEngine(info["name"], info["icon"], info["query"], info["home"])
             keys.append(key)
         self.meta_info.keywords = keys
+        self.default_engine = "google"
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
-        if self.engines.get(keyword):
+        if keyword and keyword != "*":
             engine = self.engines[keyword]
-            results.append(WebSearchResultItem(self.meta_info, self.engines[keyword], text))
-            suggest = self.suggestions[engine.name] if self.suggestions.get(engine.name) else self.suggestions.get(
-                self.default_suggest)
-            return results, AsyncSuggestThread(self.meta_info, parent, suggest, self.engines[keyword], text,
-                                               token)
-        return results
+        else:
+            engine = self.engines[self.default_engine]
+        results.append(WebSearchResultItem(self.meta_info, engine, text))
+        suggest = self.suggestions[engine.name] \
+            if self.suggestions.get(engine.name) \
+            else self.suggestions.get(self.default_suggest)
+        return results, AsyncSuggestThread(self.meta_info, parent, suggest, engine, text, token)

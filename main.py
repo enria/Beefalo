@@ -284,7 +284,8 @@ class DebounceThread(QThread):
                             else:
                                 result += plugin.query(keyword, text)
                 self.sinOut.emit(result)
-                self.suspend()
+                if self.work:
+                    self.suspend()
             else:
                 self.work = True
 

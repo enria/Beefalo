@@ -1,6 +1,6 @@
 {
   "engines": {
-    "*": {
+    "google": {
       "name": "Google",
       "icon": "images/web_search_google.png",
       "query": "https://www.google.com/search?q={text}",
@@ -12,13 +12,13 @@
       "query": "https://www.bing.com/search?q={text}",
       "home": "https://www.bing.com"
     },
-    "you": {
+    "youtube": {
       "name": "Youtube",
       "icon": "images/web_search_youtube.png",
       "query": "https://www.youtube.com/results?search_query={text}",
       "home": "https://www.youtube.com"
     },
-    "bili": {
+    "bilibili": {
       "name": "Bilibili",
       "icon": "images/web_search_bilibili.png",
       "query": "https://search.bilibili.com/all?keyword={text}",
@@ -30,11 +30,23 @@
       "query": "https://www.baidu.com/#ie=UTF-8&wd={text}",
       "home": "https://www.baidu.com"
     },
+    "wiki": {
+      "name": "Wikipedia",
+      "icon": "images/web_search_wiki.png",
+      "query": "https://en.wikipedia.org/wiki/{text}",
+      "home": "https://en.wikipedia.org/wiki/Main_Page"
+    },
     "github": {
       "name": "GitHub",
       "icon": "images/web_search_github3.png",
       "query": "https://github.com/search?q={text}",
       "home": "https://github.com"
+    },
+    "zhihu": {
+      "name": "知乎",
+      "icon": "images/web_search_zhihu.png",
+      "query": "https://www.zhihu.com/search?type=content&q={text}",
+      "home": "https://www.zhihu.com"
     },
     "codelf": {
       "name": "CODELF",
