@@ -82,7 +82,7 @@ code{
 ::-webkit-scrollbar
 {
     width:6px;
-    height:16px;
+    height:6px;
     background-color:#F5F5F5;
     cursor:pointer;
 }
@@ -90,7 +90,7 @@ code{
  内阴影+圆角*/
 ::-webkit-scrollbar-thumb
 {
-    border-radius:10px;
+    border-radius:3px;
     background-color:#555;
     cursor:pointer;
 }

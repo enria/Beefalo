@@ -1,39 +1,28 @@
-var jsonData=`[
-    "dsf",
-    [
-        "DSF Europe",
-        "DSF",
-        "Dsfrs",
-        "DSFA Records",
-        "DSF Refractories & Minerals Ltd",
-        "DSFSLRP",
-        "DSFARGEG",
-        "Dsfsdfssd",
-        "DSFS",
-        "DSFN"
-    ],
-    [
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        "",
-        ""
-    ],
-    [
-        "https://en.wikipedia.org/wiki/DSF_Europe",
-        "https://en.wikipedia.org/wiki/DSF",
-        "https://en.wikipedia.org/wiki/Dsfrs",
-        "https://en.wikipedia.org/wiki/DSFA_Records",
-        "https://en.wikipedia.org/wiki/DSF_Refractories_%26_Minerals_Ltd",
-        "https://en.wikipedia.org/wiki/DSFSLRP",
-        "https://en.wikipedia.org/wiki/DSFARGEG",
-        "https://en.wikipedia.org/wiki/Dsfsdfssd",
-        "https://en.wikipedia.org/wiki/DSFS",
-        "https://en.wikipedia.org/wiki/DSFN"
+var jsonData=`{
+    "flows": [
+        {
+            "name": "Echo",
+            "script": "C:/Users/13972/Documents/Beefalo/scripts/echo.py",
+            "input": "arg",
+            "output": "dialog"
+        },
+        {
+            "name": "JSON 压缩",
+            "script": "C:/Users/13972/Documents/Beefalo/scripts/json_min.py",
+            "input": "clipboard",
+            "output": "dialog"
+        },
+        {
+            "name": "JSON 格式化",
+            "script": "C:/Users/13972/Documents/Beefalo/scripts/json_format.py",
+            "input": "clipboard",
+            "output": "dialog"
+        },
+        {
+            "name": "MD5",
+            "script": "C:/Users/13972/Documents/Beefalo/scripts/md5.py",
+            "input": "arg",
+            "output": "dialog"
+        }
     ]
-]`
+}`
