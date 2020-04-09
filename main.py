@@ -158,6 +158,7 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.clear_input_result()
         else:
             self.activateWindow()
+            self.ws_input.setFocus()
             self.setVisible(True)
 
     def set_input_text(self, text):

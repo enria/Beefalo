@@ -60,11 +60,11 @@
       "query": "https://www.iconfont.cn/search/index?searchType=icon&q={text}",
       "home": "https://www.iconfont.cn"
     },
-    "easyicon": {
-      "name": "easyicon",
-      "icon": "images/web_search_easyicon.png",
-      "query": "http://www.easyicon.net/iconsearch/{text}",
-      "home": "http://www.easyicon.net"
+    "flaticon": {
+      "name": "flaticon",
+      "icon": "images/web_search_flaticon.ico",
+      "query": "https://www.flaticon.com/search/2?word={text}&license=selection",
+      "home": "https://www.flaticon.com"
     }
   }
 }
