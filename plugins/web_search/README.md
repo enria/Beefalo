@@ -1,4 +1,11 @@
 ## 搜索引擎插件
+默认搜索引擎  
+
+![](images/readme_web_search_default.gif)
+
+搜索引擎关键字  
+
+![](images/readme_web_search_wiki.gif)
 
 ### 插件设置
 
@@ -37,11 +44,6 @@
 `query`: 查询URL格式  
 `home`: 在没有输入查询关键词，可以直接跳到搜索引擎的主页  
 
-默认搜索引擎:  
-![](images/readme_web_search_default.gif)
-
-搜索引擎关键字:  
-![](images/readme_web_search_wiki.gif)
 
 
 

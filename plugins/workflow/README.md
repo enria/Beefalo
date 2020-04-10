@@ -1,5 +1,5 @@
 ## Workflow插件
-
+![MD5](images/readme_workflow_md5.gif)
 ### 插件设置
 
 ```json
@@ -19,8 +19,6 @@
 `input`: 输入方式，可选`"arg"`、`"clipboard"`  
 `output`: 输出方式，可选`"clipboard"`、`"dialog"`  
 
-实现效果：
-![MD5](images/readme_workflow_md5.gif)
 
 
 
