@@ -6,7 +6,7 @@ from datetime import datetime
 from PyQt5.QtGui import QIcon, QGuiApplication
 
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
-from result_model import ResultItem, ResultAction
+from result_model import ResultItem, ResultAction, MenuItem
 
 
 class SSJPlugin(AbstractPlugin, SettingInterface):
@@ -58,14 +58,16 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
                             if line.strip():
                                 item_match = re.match("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})] (.*)", line)
                                 if item_match:
-                                    action = ResultAction(clipboard.setText, True, item_match.groups()[1])
-                                    results.append(
-                                        ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
-                                                   "images/ssj_item.png",
-                                                   action))
+                                    copy_action = ResultAction(clipboard.setText, True, item_match.groups()[1])
+                                    item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
+                                                      "images/ssj_item.png")
                                 else:
-                                    action = ResultAction(clipboard.setText, True, line)
-                                    results.append(ResultItem(self.meta_info, line, "", "images/ssj_item.png", action))
+                                    copy_action = ResultAction(clipboard.setText, True, line)
+                                    item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
+                                delete_action = ResultAction(self.deleteTip, True, doc_search + ".md", line)
+                                item.menus = [MenuItem("复制", copy_action), MenuItem("删除", delete_action)]
+                                results.append(item)
+
                 else:
                     for doc in doc_matchs:
                         action = ResultAction(self.api.change_query, False,
@@ -110,7 +112,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
                 for doc in doc_matchs:
                     to_query = None
                     if multi:
-                        to_query = "{} {}::".format(keyword, doc)
+                        to_query = "{} {}::".format(keyword, str(doc[:-3]))
                     action = ResultAction(self.appendDoc, not multi, doc, t_tip, to_query)
                     results.append(ResultItem(self.meta_info, doc, tip, "images/ssj_choose.png", action))
         return results
@@ -125,3 +127,18 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
         shutil.move(os.path.join(self.doc_root, doc),
                     os.path.join(self.doc_root, ".delete", str(int(datetime.now().timestamp())) + "-" + doc))
         self.api.show_message("随手记: 删除文档", doc, QIcon(os.path.join(self.meta_info.path, "images/ssj_delete.png")), 1000)
+
+    def deleteTip(self, doc, tip):
+        with open(os.path.join(self.doc_root, doc), "r", encoding="utf-8") as file:
+            lines = file.readlines()
+
+        with open(os.path.join(self.doc_root, doc), "w", encoding="utf-8") as file:
+            new_lines = []
+            for line in lines:
+                if line == tip or not line:
+                    continue
+                new_lines.append(line)
+            new_lines.append("\n\n")
+            file.write("\n\n".join(new_lines))
+
+        self.api.change_query("{} {}:show".format(self.meta_info.keywords[0], str(doc[:-3])))

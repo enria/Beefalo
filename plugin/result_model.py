@@ -8,6 +8,12 @@ class ResultAction:
         self.args = args
 
 
+class MenuItem(object):
+    def __init__(self, title, action: ResultAction):
+        self.title = title
+        self.action = action
+
+
 class ResultItem:
     def __init__(self, plugin_info: PluginInfo, title=None, subTitle=None, icon=None, action=ResultAction(None, True),
                  root=False):
@@ -17,4 +23,6 @@ class ResultItem:
         self.subTitle = subTitle
         self.action = action
         self.selected = False
+        self.expand = False
         self.root = root
+        self.menus = []

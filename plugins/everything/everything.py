@@ -3,11 +3,12 @@ import ctypes
 from ctypes.wintypes import *
 import platform
 
+from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
-from PyQt5.QtGui import QIcon
+from PyQt5.QtGui import QIcon, QGuiApplication
 from PyQt5.QtWidgets import QFileIconProvider
 
-from result_model import ResultItem, ResultAction
+from result_model import ResultItem, ResultAction, MenuItem
 from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi
 from file_icon import file_icons
 
@@ -18,6 +19,17 @@ def open_file(file, plugin_info, api):
     except BaseException as e:
         api.show_message("无法打开文件", str(e),
                          QIcon(os.path.join(plugin_info.path, "images/everything_error.png")), 1000)
+
+
+def copy_to_clipboard(text):
+    QGuiApplication.clipboard().setText(text)
+
+
+def copy_file(file_name):
+    data = QtCore.QMimeData()
+    url = QtCore.QUrl.fromLocalFile(file_name)
+    data.setUrls([url])
+    QGuiApplication.clipboard().setMimeData(data)
 
 
 class FileResultItem(ResultItem):
@@ -41,6 +53,10 @@ class FileResultItem(ResultItem):
                         self.icon = file_icons[ext]
             self.icon = os.path.join("images", "icons", self.icon + ".svg")
         self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
+        self.menus = [
+            MenuItem("打文件所在位置", ResultAction(open_file, True, os.path.dirname(self.subTitle), plugin_info, api)),
+            MenuItem("复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
+            MenuItem("复制文件", ResultAction(copy_file, True, self.subTitle))]
 
 
 class AsyncSearchThread(QThread):
@@ -105,9 +121,9 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
         super().__init__()
         self.api = api
         global everything_dll
-        dll_file="Everything32.dll"
+        dll_file = "Everything32.dll"
         if platform.architecture()[0].startswith("64"):
-            dll_file="Everything64.dll"
+            dll_file = "Everything64.dll"
         everything_dll = ctypes.WinDLL(os.path.join(self.meta_info.path, "dll", dll_file))
         everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
         everything_dll.Everything_GetResultFileNameW.argtypes = [DWORD]

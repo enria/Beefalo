@@ -12,7 +12,7 @@ QLineEdit#MainLineEdit{
     margin:0px;
 }
 QListView#ResultListView{
-    margin-top:10px;
+    padding-top:10px;
     border:0;
     background-color:#1e1f1c;
 }

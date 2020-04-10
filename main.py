@@ -33,7 +33,8 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.result_model.sinOut.connect(self.adjust_size)
         self.ws_listview = QListView()
         self.ws_input = QLineEdit(self)  # 整型文本框
-        self.delegate = WidgetDelegate()
+        self.ws_input.installEventFilter(self)
+        self.delegate = WidgetDelegate(self.result_model)
 
         self.hotKeys = Hotkey(self.get_setting("hotkeys"))
         self.add_global_hotkey()
@@ -101,38 +102,41 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_input.setFixedHeight(46)
         self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handle_text_changed)
-
+        self.ws_input.setMinimumWidth(800 - 16)
         self.ws_input.returnPressed.connect(self.handle_result_selected)
 
-        vly.addWidget(self.ws_input)
-
-        self.setWindowFlag(Qt.ToolTip)
-
+        self.ws_listview.setObjectName("ResultListView")
         self.ws_listview.setModel(self.result_model)
-        self.ws_listview.setMaximumHeight(0)
         self.ws_listview.setItemDelegate(self.delegate)
-        self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Minimum, QSizePolicy.Minimum))
+        self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum))
         self.ws_listview.clicked.connect(self.handle_result_selected)
         self.ws_listview.setCursor(QCursor(Qt.PointingHandCursor))
 
+        vly.addWidget(self.ws_input)
         vly.addWidget(self.ws_listview)
         vly.setContentsMargins(8, 10, 8, 10)
         vly.setSpacing(0)
         self.setLayout(vly)
-        self.ws_listview.setObjectName("ResultListView")
+        self.setWindowFlag(Qt.ToolTip)
         self.setObjectName("MainWidget")
+        self.adjust_size()
         self.show()
         self.activateWindow()
 
     def adjust_size(self):
-        cnt = self.result_model.rowCount()
-        height = self.result_item_height
+        max_height = 66 + 10 + self.result_size * self.result_item_height
+        height, cnt = 66, self.result_model.rowCount()
         if cnt:
-            self.ws_listview.setMaximumHeight(min(cnt, self.result_size) * height + 10)
-            self.setFixedHeight(min(cnt, self.result_size) * height + 66 + 10)
-        else:
-            self.ws_listview.setMaximumHeight(min(cnt, self.result_size) * height)
-            self.setFixedHeight(min(cnt, self.result_size) * height + 66)
+            height += 10
+            height += (cnt - 1) * self.result_item_height
+            if self.result_model.select.expand:
+                height += self.result_item_height + len(self.result_model.selected_item().menus) * int(
+                    self.result_item_height / 2)
+            else:
+                height += self.result_item_height
+        actual_height = min(height, max_height)
+        self.ws_listview.setFixedHeight(actual_height - 66)
+        self.setFixedHeight(actual_height)
 
     def change_theme(self, mainTheme, highlightItem):
         self.setStyleSheet(mainTheme)
@@ -169,28 +173,37 @@ class BeefaloWidget(QWidget, SettingInterface):
     def selected_up(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_peek(
-            self.result_model.createIndex((self.result_model.selected - 1) % self.result_model.rowCount(), 0))
+        if self.result_model.select.expand and self.result_model.select.selected_menu > -1:
+            self.result_model.select.selected_menu -= 1
+            self.repaint_selected_item()
+        else:
+            self.handle_result_peek(self.result_model.create_index(-1))
 
     def selected_down(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_peek(
-            self.result_model.createIndex((self.result_model.selected + 1) % self.result_model.rowCount(), 0))
+        select = self.result_model.select
+        if select.expand and select.selected_menu < len(self.result_model.selected_item().menus) - 1:
+            self.result_model.select.selected_menu += 1
+            self.repaint_selected_item()
+        else:
+            self.handle_result_peek(self.result_model.create_index(1))
 
     def selected_page_up(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_peek(
-            self.result_model.createIndex(
-                (self.result_model.selected - self.result_size) % self.result_model.rowCount(), 0))
+        self.handle_result_peek(self.result_model.create_index(-self.result_size))
+
+    def repaint_selected_item(self):
+        cur = self.result_model.create_index()
+        self.ws_listview.dataChanged(cur, cur)
+        self.adjust_size()
+        self.ws_listview.scrollTo(self.result_model.create_index())
 
     def selected_page_down(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_peek(
-            self.result_model.createIndex(
-                (self.result_model.selected + self.result_size) % self.result_model.rowCount(), 0))
+        self.handle_result_peek(self.result_model.create_index(self.result_size))
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -209,27 +222,42 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.debounce_thread.work = False
 
     def handle_result_peek(self, index):
-        old = self.result_model.createIndex(self.result_model.selected, 0)
-        self.result_model.selected = index.row()
+        old = self.result_model.create_index()
+        if self.result_model.select.expand:
+            self.result_model.select.set_selected(index.row())
+            self.adjust_size()
+        else:
+            self.result_model.select.set_selected(index.row())
         self.ws_listview.dataChanged(index, old)
         self.ws_listview.scrollTo(index)
 
     def handle_result_selected(self):
-        if self.result_model.selected >= 0:
-            index = self.result_model.data(self.result_model.createIndex(self.result_model.selected, 0))
-            if index:
-                if index.action.close:
-                    self.change_visible()
-                if index.action.method:
-                    index.action.method(*index.action.args)
+        if self.result_model.select.valid():
+            index = self.result_model.data(self.result_model.create_index())
+            if self.result_model.select.selected_menu == -1:
+                action = index.action
+            else:
+                action = index.menus[self.result_model.select.selected_menu].action
+            if action.close:
+                self.change_visible()
+            if action.method:
+                action.method(*action.args)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible()
             return True  # 说明这个事件已被处理，其他控件别插手
-        if event.type() == QEvent.Close:
-            print("hello?")
+        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
+            if self.result_model.select.valid() and len(self.result_model.selected_item().menus):
+                if self.result_model.select.expand:
+                    self.result_model.select.selected_menu = -1
+                    self.result_model.select.expand = False
+                else:
+                    self.result_model.select.selected_menu = 0
+                    self.result_model.select.expand = True
 
+                self.repaint_selected_item()
+            return True
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
 
 
