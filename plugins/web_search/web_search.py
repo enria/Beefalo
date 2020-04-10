@@ -48,15 +48,14 @@ class BaiduSuggestion(SearchSuggestion):
 
 class GoogleSuggestion(SearchSuggestion):
     url = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=en"
-    proxies = {"http": "http://127.0.0.1:8001"}
 
-    def __init__(self):
-        pass
+    def __init__(self, proxy):
+        self.proxy = proxy
 
     def suggest(self, text):
         try:
 
-            resp = requests.get(self.url, {"q": text}, proxies=self.proxies)
+            resp = requests.get(self.url, {"q": text}, proxies=self.proxy)
             if resp.status_code == 200:
                 dom = etree.fromstring(resp.text.encode("utf-8"))
                 return dom.xpath('//suggestion//@data')
@@ -101,17 +100,16 @@ class ZhihuSuggestion(SearchSuggestion):
 
 class WikiSuggestion(SearchSuggestion):
     url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json"
-    proxies = {"https": "http://127.0.0.1:8001"}
 
-    def __init__(self):
-        pass
+    def __init__(self, proxy):
+        self.proxy = proxy
 
     def suggest(self, text):
         if not text.strip():
             return []
         try:
             resp = requests.get(self.url, {"search": text}, headers={"User-Agent": "PostmanRuntime/7.24.0"},
-                                proxies=self.proxies)
+                                proxies=self.proxy)
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
                 return json_data[1]
@@ -162,17 +160,9 @@ class AsyncSuggestThread(QThread):
 class WebSearchPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png", [], True)
 
-    suggestions = {"Google": GoogleSuggestion(),
-                   "Baidu": BaiduSuggestion(),
-                   "Bilibili": BilibiliSuggestion(),
-                   "知乎": ZhihuSuggestion(),
-                   "Wikipedia": WikiSuggestion()}
-    default_suggest = "Google"
-
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
-        self.suggestion = SearchSuggestion()
         self.engines = self.get_setting("engines")
         keys = ["*"]
         for key in self.engines:
@@ -180,7 +170,14 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
             self.engines[key] = SearchEngine(info["name"], info["icon"], info["query"], info["home"])
             keys.append(key)
         self.meta_info.keywords = keys
-        self.default_engine = "google"
+        self.default_engine = self.get_setting("default")["engine"]
+
+        self.suggestions = {"Google": GoogleSuggestion(self.get_setting("proxy")),
+                            "Baidu": BaiduSuggestion(),
+                            "Bilibili": BilibiliSuggestion(),
+                            "知乎": ZhihuSuggestion(),
+                            "Wikipedia": WikiSuggestion(self.get_setting("proxy"))}
+        self.default_suggest = self.get_setting("default")["suggestion"]
 
     def query(self, keyword, text, token=None, parent=None):
         results = []

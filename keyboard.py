@@ -31,12 +31,12 @@ class Hotkey(QThread, SettingInterface):
                 keys = key.split("+")
                 param += 1
                 if not user32.RegisterHotKey(None, param, mod_keys[keys[0]], ord(keys[1])):
-                    raise RuntimeError
+                    print("快捷键 {} : 注册失败", key)
+                    if not to_query:
+                        raise RuntimeError("主快捷无法注册，应用启动失败")
                 param_map[param] = to_query
         except BaseException as e:
             print(e)
-            print("应用已启动：快捷键被占用")
-            self.view.app.exit()
             sys.exit()
         try:
             msg = ctypes.wintypes.MSG()

@@ -229,6 +229,7 @@ class BeefaloWidget(QWidget, SettingInterface):
             return True  # 说明这个事件已被处理，其他控件别插手
         if event.type() == QEvent.Close:
             print("hello?")
+
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
 
 
@@ -267,23 +268,22 @@ class DebounceThread(QThread):
                         if self.view.plugins.get(groups[0]):
                             keyword, text = groups[0], groups[2]
                             matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
+                        if not groups[1]:
+                            matched_plugins += [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
 
                     if not matched_plugins:
                         matched_plugins = [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
-                    elif not groups[1]:
-                        matched_plugins += [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
 
-                    if matched_plugins:
-                        for matched in matched_plugins:
-                            plugin, keyword, text = matched
-                            if plugin.meta_info.async_result:
-                                item, asyncThread = plugin.query(keyword, text, self.view.token, self.obj)
-                                result += item
-                                if asyncThread:
-                                    asyncThread.sinOut.connect(self.view.async_add_results)
-                                    asyncThread.start()
-                            else:
-                                result += plugin.query(keyword, text)
+                    for matched in matched_plugins:
+                        plugin, keyword, text = matched
+                        if plugin.meta_info.async_result:
+                            item, asyncThread = plugin.query(keyword, text, self.view.token, self.obj)
+                            result += item
+                            if asyncThread:
+                                asyncThread.sinOut.connect(self.view.async_add_results)
+                                asyncThread.start()
+                        else:
+                            result += plugin.query(keyword, text)
                 self.sinOut.emit(result)
                 if self.work:
                     self.suspend()

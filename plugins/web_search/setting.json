@@ -1,4 +1,11 @@
 {
+  "proxy": {
+    "http": "http://127.0.0.1:8001"
+  },
+  "default": {
+    "engine": "google",
+    "suggestion": "Google"
+  },
   "engines": {
     "google": {
       "name": "Google",
