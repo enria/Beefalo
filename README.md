@@ -28,7 +28,7 @@ Wox的功能，目前已经实现了我需要的部分，包括：
 + [主题切换](plugins/theme)
 ![主题列表](images/readme_theme.gif)
 + [插件列表](plugins/plugin_hint)  
-![插件列表](images/readme_pl.gif)
+![插件列表](images/readme_plugin.gif)
 
 ## TODO
 目前的功能都只是针对自已的需求实现的，为了其他用户使用，还有许多点需要做：
