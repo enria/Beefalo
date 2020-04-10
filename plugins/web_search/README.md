@@ -35,13 +35,19 @@
 }
 ```
 `proxy`: 设置代理，如果不需要代理，记得设为`{}`  
+
 `default.engine`: 默认的搜索引擎，设为engines下的关键字，如`"google"`、`"bing"`  
+
 `default.suggestion`: 搜索引擎建议，可设为`"Google"`、`"Baidu"`、`"Bilibili"`、`"知乎"`、`"Wikipedia"`  
 
 对于每个搜索引擎的设置  
+
 `name`:名称，可以于搜索引擎建议配对  
+
 `icon`: 搜索引擎的图标  
+
 `query`: 查询URL格式  
+
 `home`: 在没有输入查询关键词，可以直接跳到搜索引擎的主页  
 
 

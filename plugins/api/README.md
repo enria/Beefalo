@@ -1,6 +1,8 @@
 ## API插件
+
 ![Vue](images/readme_vue.gif)
-###文档设置
+
+### 文档设置
 
 以Vue来举例，配置文件（./setting.json）内容为
 ```
