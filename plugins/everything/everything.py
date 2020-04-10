@@ -1,6 +1,7 @@
 import os
 import ctypes
 from ctypes.wintypes import *
+import platform
 
 from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QIcon
@@ -104,7 +105,10 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
         super().__init__()
         self.api = api
         global everything_dll
-        everything_dll = ctypes.WinDLL(os.path.join(self.meta_info.path, "dll", "Everything64.dll"))
+        dll_file="Everything32.dll"
+        if platform.architecture()[0].startswith("64"):
+            dll_file="Everything64.dll"
+        everything_dll = ctypes.WinDLL(os.path.join(self.meta_info.path, "dll", dll_file))
         everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
         everything_dll.Everything_GetResultFileNameW.argtypes = [DWORD]
         everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
