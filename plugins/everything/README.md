@@ -9,8 +9,10 @@
   "link_root": "C:\\Users\\13972\\Links"
 }
 ```
-`everything_query_max`: 设置查询返回结果的最大值，设为0则不限制（不建议）  
-`system_icon`: 设为`true`则使用系统文件的图标
+`everything_query_max`: 设置查询返回结果的最大值，设为0则不限制（不建议） 
+ 
+`system_icon`: 设为`true`则使用系统文件的图标  
+
 `link_root`: 快捷方式的文件夹  
 
 我们来详细解释一下快捷方式的文件夹的作用。  
