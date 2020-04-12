@@ -6,9 +6,10 @@ from enum import Enum, unique
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QDesktopWidget
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger
 from result_model import ResultItem, ResultAction, MenuItem
 
+log = get_logger("Workflow")
 
 @unique
 class Source(Enum):
@@ -77,7 +78,7 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
             elif process_error:
                 output = process_error
         except BaseException as e:
-            print(e)
+            log.error(e)
             output = str(e)
 
     if flow.output == Source.Dialog:

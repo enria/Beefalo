@@ -6,8 +6,10 @@ from lxml import etree
 
 from PyQt5.QtGui import QGuiApplication
 
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, get_logger
 from result_model import ResultItem, ResultAction
+
+log = get_logger("Formatter")
 
 
 def convertJsTemplate(text):
@@ -74,7 +76,7 @@ class FormatterPlugin(AbstractPlugin):
                             ResultItem(self.meta_info, "在浏览器中查看SQL", "使用默认浏览器", "images/fmt_browser.png", action))
                         return results
                 except BaseException as e:
-                    print(e)
+                    log.error(e)
 
             for cmd in self.commands:
                 action = ResultAction(self.api.change_query, False, "%s %s" % (keyword, cmd))
@@ -167,7 +169,3 @@ class SQLHelper:
         text = re.sub(r"\s*,", ", ", text)
         text = re.sub(r"\n", " ", text)
         return re.sub(r"\s{2,}", " ", text)
-
-
-if __name__ == '__main__':
-    print(convertJsTemplate("```\\fdsafsda$$`"))

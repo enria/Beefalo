@@ -1,1 +1,1 @@
-var textData=`file:///C:/Users/13972/source/repos/Wox/Plugins/Wox.Plugin.Url`
+var textData=`<xml`

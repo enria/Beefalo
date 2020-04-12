@@ -6,9 +6,10 @@ from datetime import datetime
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from plugin_api import PluginInfo, ContextApi, AbstractPlugin
+from plugin_api import PluginInfo, ContextApi, AbstractPlugin, get_logger
 from result_model import ResultItem, ResultAction
 
+log = get_logger("在线词典")
 
 class DictResultItem(ResultItem):
     icons = {"basic": "images/dict_basic.png", "translate": "images/dict_translate.png"}
@@ -62,7 +63,7 @@ class YoudaoApiThread(QThread):
                         results.append(DictResultItem(self.plugin_info, exp, self.text, "translate"))
             self.sinOut.emit(self.token, results)
         except BaseException as e:
-            print(e)
+            log.error(e)
 
 
 class TranslatePlugin(AbstractPlugin):

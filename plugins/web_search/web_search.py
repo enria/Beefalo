@@ -6,8 +6,10 @@ import json
 from lxml import etree
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin
+from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin, get_logger
 from result_model import ResultItem, ResultAction
+
+log = get_logger("搜索引擎")
 
 
 class SearchEngine:
@@ -42,7 +44,7 @@ class BaiduSuggestion(SearchSuggestion):
                 if sug_match:
                     return json.loads(sug_match.groups()[0])
         except BaseException as e:
-            print(e)
+            log.error(str(e))
         return []
 
 
@@ -54,13 +56,12 @@ class GoogleSuggestion(SearchSuggestion):
 
     def suggest(self, text):
         try:
-
             resp = requests.get(self.url, {"q": text}, proxies=self.proxy)
             if resp.status_code == 200:
                 dom = etree.fromstring(resp.text.encode("utf-8"))
                 return dom.xpath('//suggestion//@data')
         except BaseException as e:
-            print(e)
+            log.error(str(e))
         return []
 
 
@@ -77,7 +78,7 @@ class BilibiliSuggestion(SearchSuggestion):
                 json_data = json.loads(resp.text)
                 return [json_data[item]["value"] for item in json_data]
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []
 
 
@@ -94,7 +95,7 @@ class ZhihuSuggestion(SearchSuggestion):
                 json_data = json.loads(resp.text)
                 return [item["query"] for item in json_data["suggest"]]
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []
 
 

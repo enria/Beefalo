@@ -9,9 +9,10 @@ from PyQt5.QtGui import QIcon, QGuiApplication
 from PyQt5.QtWidgets import QFileIconProvider
 
 from result_model import ResultItem, ResultAction, MenuItem
-from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi
+from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi, get_logger
 from file_icon import file_icons
 
+log = get_logger("Everything")
 
 def open_file(file, plugin_info, api):
     try:
@@ -82,7 +83,7 @@ class AsyncSearchThread(QThread):
                                        self.system_icon)
             self.sinOut.emit(self.token, results)
         except BaseException as e:
-            print(e)
+            log.error(e)
 
 
 global everything_dll
@@ -114,7 +115,7 @@ def everything_query(root, text, query_max, plugin_info, api, system_icon):
 
 
 class EverythingPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("everything", "使用Everything查找本机文件", "images/everything_search.png",
+    meta_info = PluginInfo("Everything", "使用Everything查找本机文件", "images/everything_search.png",
                            ["find", "*"], True)
 
     def __init__(self, api: ContextApi):

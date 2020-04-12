@@ -5,10 +5,10 @@ import win32con
 
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from plugin_api import SettingInterface, PluginInfo
+from plugin_api import SettingInterface, PluginInfo, get_logger
 
 mod_keys = {"ctrl": win32con.MOD_CONTROL, "alt": win32con.MOD_ALT, "shift": win32con.MOD_SHIFT}
-
+log = get_logger("热键")
 
 class Hotkey(QThread, SettingInterface):
     sinOut = pyqtSignal()
@@ -31,12 +31,12 @@ class Hotkey(QThread, SettingInterface):
                 keys = key.split("+")
                 param += 1
                 if not user32.RegisterHotKey(None, param, mod_keys[keys[0]], ord(keys[1])):
-                    print("快捷键 {} : 注册失败".format(key))
+                    log.error("快捷键 {} : 注册失败".format(key))
                     if not to_query:
                         raise RuntimeError("主快捷无法注册，应用启动失败")
                 param_map[param] = to_query
         except BaseException as e:
-            print(e)
+            log.error(e)
             sys.exit()
         try:
             msg = ctypes.wintypes.MSG()

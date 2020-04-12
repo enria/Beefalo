@@ -14,11 +14,13 @@ from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
 
+from keyboard import Hotkey
+
 sys.path.append("plugin")
-from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo
+from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
 from result_list import ResultListModel, WidgetDelegate
 
-from keyboard import Hotkey
+log = get_logger("主窗口")
 
 
 class BeefaloWidget(QWidget, SettingInterface):
@@ -74,6 +76,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
+            log.info("插件初始化：{}".format(plugin.meta_info.name))
             if len(plugin.meta_info.keywords):
                 for keyword in plugin.meta_info.keywords:
                     if self.plugins.get(keyword):
@@ -82,6 +85,7 @@ class BeefaloWidget(QWidget, SettingInterface):
                         self.plugins[keyword] = [plugin]
             else:
                 self.plugins["*"].append(plugin)
+
 
     def init_ui(self):
         self.setGeometry(0, 0, 800, 66 + self.result_item_height * (self.result_size + 2))
@@ -277,7 +281,7 @@ class DebounceThread(QThread):
             self.handle = ctypes.windll.kernel32.OpenThread(  # @UndefinedVariable
                 win32con.PROCESS_ALL_ACCESS, False, int(QThread.currentThreadId()))
         except Exception as e:
-            print('get thread handle failed', e)
+            log.error('get thread handle failed', e)
             return
         self.suspend()
         self.work = True
@@ -330,11 +334,12 @@ class DebounceThread(QThread):
 global sys_tray
 
 if __name__ == '__main__':
+    log.info("============================启动Beefalo============================")
     app = QApplication(sys.argv)
     sys_tray = QSystemTrayIcon(app)
     window = BeefaloWidget(app)
 
-    sys_tray.setIcon(QIcon("images/金牛.png"))  # 设置托盘图标
+    sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
     sys_tray_menu = QMenu()
     show_action = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
     show_action.triggered.connect(window.change_visible)

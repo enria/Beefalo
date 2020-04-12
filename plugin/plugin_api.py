@@ -1,5 +1,8 @@
 import json
 import os
+import logging
+import sys
+from logging.handlers import TimedRotatingFileHandler
 
 
 class ContextApi:
@@ -48,3 +51,18 @@ class SettingInterface(object):
         self.setting[key] = value
         with open(self.setting_path, "w", encoding="utf-8") as file:
             file.write(json.dumps(self.setting, ensure_ascii=False, indent=4))
+
+
+def get_logger(name) -> logging.Logger:
+    log = logging.getLogger(name)
+    log.setLevel(logging.INFO)
+    formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    log_file_handler = TimedRotatingFileHandler(filename="log/Beefalo.log", when="D", encoding="utf-8")
+    log_file_handler.suffix = "%Y-%m-%d.log"
+    log_file_handler.setFormatter(formatter)
+    log_file_handler.setLevel(logging.INFO)
+    log.addHandler(log_file_handler)
+    stream_handler = logging.StreamHandler(sys.stdout)
+    stream_handler.setFormatter(formatter)
+    log.addHandler(stream_handler)
+    return log
