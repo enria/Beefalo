@@ -3,13 +3,14 @@ import os
 
 
 class ContextApi:
-    def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme):
+    def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme, change_results):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
         self.plugin_types = plugin_types
         self.main_window = main_window
         self.get_theme = get_theme
+        self.change_results = change_results
 
 
 class PluginInfo(object):

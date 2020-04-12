@@ -7,7 +7,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QDesktopWidget
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
-from result_model import ResultItem, ResultAction
+from result_model import ResultItem, ResultAction, MenuItem
 
 
 @unique
@@ -15,6 +15,7 @@ class Source(Enum):
     Arg = "arg"
     Clipboard = "clipboard"
     Dialog = "dialog"
+    Result = "result"
 
 
 class Workflow(object):
@@ -57,7 +58,7 @@ class Dialog(QDialog):
         self.reject()
 
 
-def run(flow: Workflow, args, plugin_info, api):
+def run(flow: Workflow, args, plugin_info, api: ContextApi):
     output = ""
 
     if flow.script.endswith(".py"):
@@ -84,6 +85,10 @@ def run(flow: Workflow, args, plugin_info, api):
         dialog.show()
     elif flow.output == Source.Clipboard:
         clipboard.setText(output)
+    elif flow.output == Source.Result:
+        result = ResultItem(plugin_info, flow.name, output, "images/workflow_script.png")
+        result.menus = [MenuItem("复制", ResultAction(clipboard.setText, True, output))]
+        api.change_results([result])
 
 
 clipboard = QGuiApplication.clipboard()
@@ -114,6 +119,6 @@ class WorkflowPlugin(AbstractPlugin, SettingInterface):
                 flow_arg = args
                 if flow.source == Source.Clipboard:
                     flow_arg = [clipboard.text()]
-                action = ResultAction(run, True, flow, flow_arg, self.meta_info, self.api)
+                action = ResultAction(run, flow.output != Source.Result, flow, flow_arg, self.meta_info, self.api)
                 results.append(ResultItem(self.meta_info, flow.name, flow.script, "images/workflow_script.png", action))
         return results

@@ -70,7 +70,7 @@ class BeefaloWidget(QWidget, SettingInterface):
                         pass
 
         api = ContextApi(self.set_input_text, sys_tray.showMessage, self.change_theme, self.plugin_types, self,
-                         self.get_theme)
+                         self.get_theme, self.async_change_result)
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)

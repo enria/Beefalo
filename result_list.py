@@ -63,7 +63,7 @@ class ResultListModel(QAbstractListModel):
             self.sinOut.emit()
 
     def changeItems(self, itemDatas):
-        change_size = len(itemDatas) != self.rowCount()
+        change_size = len(itemDatas) != self.rowCount() or self.select.expand
         self.clear()
         if itemDatas:
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(itemDatas) - 1)
