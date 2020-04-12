@@ -135,7 +135,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
         with open(os.path.join(self.doc_root, doc), "w", encoding="utf-8") as file:
             new_lines = []
             for line in lines:
-                if line == tip or not line:
+                if line == tip or not line.strip():
                     continue
                 new_lines.append(line)
             new_lines.append("\n\n")
