@@ -12,7 +12,6 @@ from result_model import ResultItem, ResultAction, MenuItem
 class SSJPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("随手记", "快速记录想法到markdown文件中，支持多文件。", "images/ssj_icon.png",
                            ["sj"], False)
-    commands = ("show", "del")
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
@@ -49,72 +48,60 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             for doc in os.listdir(self.doc_root):
                 if doc.endswith(".md") and not os.path.isdir(doc):
                     doc_matchs.append(doc)
-        if mode == ":" and tip in self.commands:
-            if tip == "show":
-                if total_match:
-                    with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
-                        clipboard = QGuiApplication.clipboard()
-                        for line in doc.readlines():
-                            if line.strip():
-                                item_match = re.match("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})] (.*)", line)
-                                if item_match:
-                                    copy_action = ResultAction(clipboard.setText, True, item_match.groups()[1])
-                                    item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
-                                                      "images/ssj_item.png")
-                                else:
-                                    copy_action = ResultAction(clipboard.setText, True, line)
-                                    item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
-                                delete_action = ResultAction(self.deleteTip, True, doc_search + ".md", line)
-                                item.menus = [MenuItem("复制", copy_action), MenuItem("删除", delete_action)]
-                                results.append(item)
-
-                else:
-                    for doc in doc_matchs:
-                        action = ResultAction(self.api.change_query, False,
-                                              "{} {}:{}".format(keyword, str(doc[0:-3]), tip))
-                        results.append(ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action))
-            elif tip == "del":
+        if not tip.strip():
+            if total_match:
                 for doc in doc_matchs:
-                    action = ResultAction(self.deleteDoc, True, doc)
-                    results.append(ResultItem(self.meta_info, doc, "删除此文档", "images/ssj_delete.png", action))
-
-        else:
-            blank, multi = not bool(tip.strip()), mode == "::"
-            if blank:
-                if total_match and not multi:
-                    for cmd in self.commands:
-                        to_query = "{} {}:{}".format(keyword, str(doc_search), cmd)
-                        action = ResultAction(self.api.change_query, False, to_query)
-                        results.append(
-                            ResultItem(self.meta_info, cmd, doc_search + ".md", "images/ssj_cmd.png", action))
-                    for doc in doc_matchs:
-                        if doc != doc_search + ".md":
-                            to_query = "{} {}{}".format(keyword, str(doc[0:-3]), mode)
-                            action = ResultAction(self.api.change_query, False, to_query)
-                            results.append(ResultItem(self.meta_info, doc, "选择此文档", "images/ssj_choose.png", action))
-                else:
-                    if mode == "":
-                        mode = ":"
-                    for doc in doc_matchs:
+                    if doc != doc_search + ".md":
                         to_query = "{} {}{}".format(keyword, str(doc[0:-3]), mode)
                         action = ResultAction(self.api.change_query, False, to_query)
-                        results.append(ResultItem(self.meta_info, doc, "选择此文档", "images/ssj_choose.png", action))
-            else:
-                t_tip = (datetime.now(), tip)
-                if not total_match and doc_search.strip():
-                    to_query = None
-                    if multi:
-                        to_query = "{} {}::".format(keyword, doc_search)
-                    action = ResultAction(self.appendDoc, not multi, doc_search.strip() + ".md", t_tip, to_query)
-                    results.append(
-                        ResultItem(self.meta_info, "新建文档：" + doc_search + ".md", tip, "images/ssj_new.png", action))
+                        item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
+                        item.menus = [MenuItem("删除", ResultAction(self.deleteDoc, doc))]
+                        results.append(item)
+                with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
+                    clipboard = QGuiApplication.clipboard()
+                    for line in doc.readlines():
+                        if line.strip():
+                            item_match = re.match("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})] (.*)", line)
+                            if item_match:
+                                copy_action = ResultAction(clipboard.setText, True, item_match.groups()[1])
+                                item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
+                                                  "images/ssj_item.png")
+                            else:
+                                copy_action = ResultAction(clipboard.setText, True, line)
+                                item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
+                            delete_action = ResultAction(self.deleteTip, False, doc_search + ".md", line)
+                            item.menus = [MenuItem("复制", copy_action), MenuItem("删除", delete_action)]
+                            results.append(item)
 
+            else:
                 for doc in doc_matchs:
-                    to_query = None
-                    if multi:
-                        to_query = "{} {}::".format(keyword, str(doc[:-3]))
-                    action = ResultAction(self.appendDoc, not multi, doc, t_tip, to_query)
-                    results.append(ResultItem(self.meta_info, doc, tip, "images/ssj_choose.png", action))
+                    action = ResultAction(self.api.change_query, False,
+                                          "{} {}:".format(keyword, str(doc[0:-3])))
+                    item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
+                    item.menus = [
+                        MenuItem("删除", ResultAction(self.deleteDoc, False, doc, "{} {}".format(keyword, text)))]
+                    results.append(item)
+
+        else:
+            multi = mode == "::"
+            t_tip = (datetime.now(), tip)
+            if not total_match:
+                to_query = None
+                if not doc_search.strip():
+                    doc_search = "默认文档"
+                if multi:
+                    to_query = "{} {}::".format(keyword, doc_search)
+                action = ResultAction(self.appendDoc, not multi, doc_search + ".md", t_tip, to_query)
+                results.append(
+                    ResultItem(self.meta_info, "新建文档：{}.md".format(doc_search), tip, "images/ssj_new.png", action))
+
+            for doc in doc_matchs:
+                to_query = None
+                if multi:
+                    to_query = "{} {}::".format(keyword, str(doc[:-3]))
+                action = ResultAction(self.appendDoc, not multi, doc, t_tip, to_query)
+                results.append(ResultItem(self.meta_info, doc, tip, "images/ssj_choose.png", action))
+
         return results
 
     def appendDoc(self, doc, t_tip, multi=None):
@@ -123,15 +110,15 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
         if multi:
             self.api.change_query(multi)
 
-    def deleteDoc(self, doc):
+    def deleteDoc(self, doc, to_query="sj "):
         shutil.move(os.path.join(self.doc_root, doc),
                     os.path.join(self.doc_root, ".delete", str(int(datetime.now().timestamp())) + "-" + doc))
         self.api.show_message("随手记: 删除文档", doc, QIcon(os.path.join(self.meta_info.path, "images/ssj_delete.png")), 1000)
+        self.api.change_query(to_query)
 
     def deleteTip(self, doc, tip):
         with open(os.path.join(self.doc_root, doc), "r", encoding="utf-8") as file:
             lines = file.readlines()
-
         with open(os.path.join(self.doc_root, doc), "w", encoding="utf-8") as file:
             new_lines = []
             for line in lines:
@@ -141,4 +128,4 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             new_lines.append("\n\n")
             file.write("\n\n".join(new_lines))
 
-        self.api.change_query("{} {}:show".format(self.meta_info.keywords[0], str(doc[:-3])))
+        self.api.change_query("{} {}:".format(self.meta_info.keywords[0], str(doc[:-3])))

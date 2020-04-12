@@ -86,7 +86,6 @@ class BeefaloWidget(QWidget, SettingInterface):
             else:
                 self.plugins["*"].append(plugin)
 
-
     def init_ui(self):
         self.setGeometry(0, 0, 800, 66 + self.result_item_height * (self.result_size + 2))
         self.setWindowTitle('Beefalo')
@@ -170,7 +169,10 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.setVisible(True)
 
     def set_input_text(self, text):
-        self.ws_input.setText(text)
+        if self.ws_input.text() == text:
+            self.handle_text_changed()
+        else:
+            self.ws_input.setText(text)
         self.activateWindow()
         self.setVisible(True)
 
@@ -218,7 +220,8 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def async_change_result(self, results):
         self.result_model.changeItems(results)
-        self.handle_result_peek(self.result_model.createIndex(0, 0))
+        if len(results):
+            self.handle_result_peek(self.result_model.createIndex(0, 0))
 
     def handle_text_changed(self):
         if self.debounce_thread.pause:
