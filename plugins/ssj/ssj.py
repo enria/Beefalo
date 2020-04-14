@@ -86,15 +86,15 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             multi = mode == "::"
             t_tip = (datetime.now(), tip)
             if not total_match:
-                to_query = None
-                if not doc_search.strip():
-                    doc_search = "默认文档"
-                if multi:
-                    to_query = "{} {}::".format(keyword, doc_search)
-                action = ResultAction(self.appendDoc, not multi, doc_search + ".md", t_tip, to_query)
-                results.append(
-                    ResultItem(self.meta_info, "新建文档：{}.md".format(doc_search), tip, "images/ssj_new.png", action))
-
+                if doc_search.strip():
+                    to_query = None
+                    if multi:
+                        to_query = "{} {}::".format(keyword, doc_search)
+                    action = ResultAction(self.appendDoc, not multi, doc_search + ".md", t_tip, to_query)
+                    results.append(
+                        ResultItem(self.meta_info, "新建文档：{}.md".format(doc_search), tip, "images/ssj_new.png", action))
+            if not doc_matchs:
+                doc_matchs = ["默认文档.md"]
             for doc in doc_matchs:
                 to_query = None
                 if multi:

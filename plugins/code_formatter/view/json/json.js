@@ -1,28 +1,16 @@
 var jsonData=`{
-    "flows": [
+    "sites": [
         {
-            "name": "Echo",
-            "script": "C:/Users/13972/Documents/Beefalo/scripts/echo.py",
-            "input": "arg",
-            "output": "dialog"
+            "name": "Runoob",
+            "url": "www.runoob.com"
         },
         {
-            "name": "JSON 压缩",
-            "script": "C:/Users/13972/Documents/Beefalo/scripts/json_min.py",
-            "input": "clipboard",
-            "output": "dialog"
+            "name": "Google",
+            "url": "www.google.com"
         },
         {
-            "name": "JSON 格式化",
-            "script": "C:/Users/13972/Documents/Beefalo/scripts/json_format.py",
-            "input": "clipboard",
-            "output": "dialog"
-        },
-        {
-            "name": "MD5",
-            "script": "C:/Users/13972/Documents/Beefalo/scripts/md5.py",
-            "input": "arg",
-            "output": "dialog"
+            "name": "Taobao",
+            "url": "www.taobao.com"
         }
     ]
 }`

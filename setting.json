@@ -4,7 +4,8 @@
     "alt+S": "sj ",
     "alt+G": "g ",
     "alt+F": "find ",
-    "alt+P": "pl "
+    "alt+P": "pl ",
+    "alt+D": "dict "
   },
   "result_size": 6
 }

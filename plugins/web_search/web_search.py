@@ -13,11 +13,12 @@ log = get_logger("搜索引擎")
 
 
 class SearchEngine:
-    def __init__(self, name, icon, url, home):
+    def __init__(self, name, icon, url, home, suggestion):
         self.icon = icon
         self.url = url
         self.name = name
         self.home = home
+        self.suggestion = suggestion
 
 
 class SearchSuggestion:
@@ -159,7 +160,7 @@ class AsyncSuggestThread(QThread):
 
 
 class WebSearchPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png", [], True)
+    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon2.png", [], True)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
@@ -168,7 +169,8 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
         keys = ["*"]
         for key in self.engines:
             info = self.engines[key]
-            self.engines[key] = SearchEngine(info["name"], info["icon"], info["query"], info["home"])
+            self.engines[key] = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
+                                             info.get("suggestion"))
             keys.append(key)
         self.meta_info.keywords = keys
         self.default_engine = self.get_setting("default")["engine"]
@@ -187,7 +189,11 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
         else:
             engine = self.engines[self.default_engine]
         results.append(WebSearchResultItem(self.meta_info, engine, text))
-        suggest = self.suggestions[engine.name] \
-            if self.suggestions.get(engine.name) \
-            else self.suggestions.get(self.default_suggest)
-        return results, AsyncSuggestThread(self.meta_info, parent, suggest, engine, text, token)
+        if engine.suggestion:
+            suggest = self.suggestions.get(engine.suggestion)
+        else:
+            suggest = self.suggestions.get(self.default_suggest)
+        if suggest:
+            return results, AsyncSuggestThread(self.meta_info, parent, suggest, engine, text, token)
+        else:
+            return results, None

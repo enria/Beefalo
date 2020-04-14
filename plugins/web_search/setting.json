@@ -1,6 +1,6 @@
 {
   "proxy": {
-    "http": "http://127.0.0.1:8001"
+    "http": "socks5://127.0.0.1:1080"
   },
   "default": {
     "engine": "google",
@@ -11,7 +11,8 @@
       "name": "Google",
       "icon": "images/web_search_google.png",
       "query": "https://www.google.com/search?q={text}",
-      "home": "https://www.google.com"
+      "home": "https://www.google.com",
+      "suggestion": "Google"
     },
     "bing": {
       "name": "Bing",
@@ -29,19 +30,22 @@
       "name": "Bilibili",
       "icon": "images/web_search_bilibili.png",
       "query": "https://search.bilibili.com/all?keyword={text}",
-      "home": "https://www.bilibili.com/"
+      "home": "https://www.bilibili.com/",
+      "suggestion": "Bilibili"
     },
     "baidu": {
       "name": "Baidu",
       "icon": "images/web_search_baidu.png",
       "query": "https://www.baidu.com/#ie=UTF-8&wd={text}",
-      "home": "https://www.baidu.com"
+      "home": "https://www.baidu.com",
+      "suggestion": "Baidu"
     },
     "wiki": {
       "name": "Wikipedia",
       "icon": "images/web_search_wiki.png",
       "query": "https://en.wikipedia.org/wiki/{text}",
-      "home": "https://en.wikipedia.org/wiki/Main_Page"
+      "home": "https://en.wikipedia.org/wiki/Main_Page",
+      "suggestion": "Wikipedia"
     },
     "github": {
       "name": "GitHub",
@@ -53,7 +57,8 @@
       "name": "知乎",
       "icon": "images/web_search_zhihu.png",
       "query": "https://www.zhihu.com/search?type=content&q={text}",
-      "home": "https://www.zhihu.com"
+      "home": "https://www.zhihu.com",
+      "suggestion": "知乎"
     },
     "codelf": {
       "name": "CODELF",
@@ -70,8 +75,15 @@
     "flaticon": {
       "name": "flaticon",
       "icon": "images/web_search_flaticon.ico",
-      "query": "https://www.flaticon.com/search/2?word={text}&license=selection",
+      "query": "https://www.flaticon.com/search?word={text}&license=selection&order_by=4&grid=small",
       "home": "https://www.flaticon.com"
+    },
+    "dict": {
+      "name": "海词",
+      "icon": "images/web_search_dict.png",
+      "query": "http://dict.cn/{text}",
+      "home": "http://dict.cn",
+      "suggestion": "None"
     }
   }
 }

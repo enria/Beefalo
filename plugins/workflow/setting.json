@@ -23,6 +23,12 @@
       "script": "C:/Users/13972/Documents/Beefalo/scripts/md5.py",
       "input": "arg",
       "output": "result"
+    },
+    {
+      "name": "Word Count",
+      "script": "C:/Users/13972/Documents/Beefalo/scripts/word_count.py",
+      "input": "clipboard",
+      "output": "result"
     }
   ]
 }
