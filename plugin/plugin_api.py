@@ -58,7 +58,6 @@ def get_logger(name) -> logging.Logger:
     log.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     log_file_handler = TimedRotatingFileHandler(filename="log/Beefalo.log", when="D", encoding="utf-8")
-    log_file_handler.suffix = "%Y-%m-%d.log"
     log_file_handler.setFormatter(formatter)
     log_file_handler.setLevel(logging.INFO)
     log.addHandler(log_file_handler)

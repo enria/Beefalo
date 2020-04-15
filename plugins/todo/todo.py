@@ -38,7 +38,7 @@ class TodoPlugin(AbstractPlugin):
                     _id, _check, _time, _text = groups[0], groups[1] == "x", groups[2], groups[3]
                     if text in _text:
                         results.append(Todo(_id, _check, _time, _text))
-        return results
+        return results[::-1]
 
     def change_status(self, todo_id, to_query, delete=False):
         results = []

@@ -15,10 +15,13 @@ from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, Q
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
 
 from keyboard import Hotkey
+from result_list import ResultListModel, WidgetDelegate
+from gui_size import WindowSize, ItemSize
 
+# load plugin api from folder.
+# For plugin development, just need to add the plugin api folder to path.
 sys.path.append("plugin")
 from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
-from result_list import ResultListModel, WidgetDelegate
 
 log = get_logger("主窗口")
 
@@ -31,17 +34,20 @@ class BeefaloWidget(QWidget, SettingInterface):
         super().__init__()
         self.app = root_app
 
+        # define ui widgets
         self.result_model = ResultListModel(self)
         self.result_model.sinOut.connect(self.adjust_size)
         self.ws_listview = QListView()
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
-        self.delegate = WidgetDelegate(self.result_model)
+        self.m_size = WindowSize()
+        self.delegate = WidgetDelegate(self.result_model, ItemSize())
         self.instant = False
 
         self.hotKeys = Hotkey(self.get_setting("hotkeys"))
         self.add_global_hotkey()
 
+        # load plugins
         self.plugins = {"*": []}
         self.plugin_types = []
         self.load_plugins()
@@ -54,13 +60,14 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.debounce_thread.start()
 
         self.result_size = min(10, max(4, self.get_setting("result_size")))
-        self.result_item_height = self.delegate.sizeHint(None, None).height()
+        self.result_item_height = self.delegate.i_size.height
         self.init_ui()
 
     def load_plugins(self):
         plugins_dir = "plugins"
         for plugin_dir in os.listdir(plugins_dir):
             if os.path.isdir(os.path.join(plugins_dir, plugin_dir)):
+                # append plugin's folder path
                 sys.path.append(os.path.join(plugins_dir, plugin_dir))
                 plugin_module = importlib.import_module("%s.%s" % (plugins_dir, plugin_dir))
                 for att in dir(plugin_module):
@@ -72,7 +79,8 @@ class BeefaloWidget(QWidget, SettingInterface):
                     except BaseException as e:
                         pass
 
-        api = ContextApi(self.set_input_text, sys_tray.showMessage, self.change_theme, self.plugin_types, self,
+        api = ContextApi(self.set_input_text, sys_tray.showMessage,
+                         self.change_theme, self.plugin_types, self,
                          self.get_theme, self.async_change_result)
 
         for plugin_type in self.plugin_types:
@@ -85,40 +93,46 @@ class BeefaloWidget(QWidget, SettingInterface):
                     else:
                         self.plugins[keyword] = [plugin]
             else:
+                # add plugin to global
                 self.plugins["*"].append(plugin)
 
     def init_ui(self):
-        self.setGeometry(0, 0, 800, 66 + self.result_item_height * (self.result_size + 2))
+        self.setGeometry(0, 0, self.m_size.main_width,
+                         self.m_size.editor_height + self.m_size.main_padding[1] * 2
+                         + self.result_item_height * (self.result_size + 2))
         self.setWindowTitle('Beefalo')
 
+        # make the main window's position center
         qr = self.frameGeometry()
         cp = QDesktopWidget().availableGeometry().center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
-        self.setFixedHeight(66)
+        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
         vly = QVBoxLayout()
 
         font = self.ws_input.font()
         font.setFamily("微软雅黑")
-        font.setPointSize(21)  # change it's size
+        font.setPointSize(self.m_size.editor_font_size)  # change it's size
         self.ws_input.setFont(font)
-        self.ws_input.setFixedHeight(46)
+        self.ws_input.setFixedHeight(self.m_size.editor_height)
         self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handle_text_changed)
-        self.ws_input.setMinimumWidth(800 - 16)
-        self.ws_input.returnPressed.connect(self.handle_result_selected)
+        self.ws_input.returnPressed.connect(self.handle_result_triggered)
 
         self.ws_listview.setObjectName("ResultListView")
         self.ws_listview.setModel(self.result_model)
         self.ws_listview.setItemDelegate(self.delegate)
         self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum))
-        self.ws_listview.clicked.connect(self.handle_result_selected)
+        self.ws_listview.clicked.connect(self.handle_result_triggered)
         self.ws_listview.setCursor(QCursor(Qt.PointingHandCursor))
 
         vly.addWidget(self.ws_input)
         vly.addWidget(self.ws_listview)
-        vly.setContentsMargins(8, 10, 8, 10)
+        vly.setContentsMargins(self.m_size.main_padding[0],
+                               self.m_size.main_padding[1],
+                               self.m_size.main_padding[0],
+                               self.m_size.main_padding[1])
         vly.setSpacing(0)
         self.setLayout(vly)
         self.setWindowFlag(Qt.ToolTip)
@@ -128,18 +142,23 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.activateWindow()
 
     def adjust_size(self):
-        max_height = 66 + 10 + self.result_size * self.result_item_height
-        height, cnt = 66, self.result_model.rowCount()
+        base_height = self.m_size.editor_height + self.m_size.main_padding[1] * 2
+        max_height = base_height + self.m_size.result_margin_top \
+                     + self.result_size * self.result_item_height
+        height, cnt = base_height, self.result_model.rowCount()
         if cnt:
-            height += 10
+            height += self.m_size.result_margin_top
             height += (cnt - 1) * self.result_item_height
-            if self.result_model.select.expand:
-                height += self.result_item_height + len(self.result_model.selected_item().menus) * int(
-                    self.result_item_height / 2)
+            if self.result_model.select.expand:  # add menu items height
+                height += self.result_item_height \
+                          + len(self.result_model.selected_item().menus) \
+                          * self.delegate.i_size.menu_height
             else:
-                height += self.result_item_height
+                height += self.result_item_height  # just an ordinary result item
+
+        # TODO find more tricky method
         actual_height = min(height, max_height)
-        self.ws_listview.setFixedHeight(actual_height - 66)
+        self.ws_listview.setFixedHeight(actual_height - base_height)
         self.setFixedHeight(actual_height)
 
     def change_theme(self, mainTheme, highlightItem):
@@ -170,6 +189,9 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.setVisible(True)
 
     def set_input_text(self, text):
+        # if the text is the same to the origin, it's called by plugin bo refresh result list
+        # in this case we should cancel the input debounce and don't change the selected row (try to)
+        # the 'instant' variable make sense in self.async_change_result, debounce thread and delegate
         if self.ws_input.text() == text:
             self.instant = True
             self.handle_text_changed()
@@ -177,41 +199,6 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.ws_input.setText(text)
         self.activateWindow()
         self.setVisible(True)
-
-    def selected_up(self):
-        if self.result_model.rowCount() == 0:
-            return
-        if self.result_model.select.expand and self.result_model.select.selected_menu > -1:
-            self.result_model.select.selected_menu -= 1
-            self.repaint_selected_item()
-        else:
-            self.handle_result_peek(self.result_model.create_index(-1))
-
-    def selected_down(self):
-        if self.result_model.rowCount() == 0:
-            return
-        select = self.result_model.select
-        if select.expand and select.selected_menu < len(self.result_model.selected_item().menus) - 1:
-            self.result_model.select.selected_menu += 1
-            self.repaint_selected_item()
-        else:
-            self.handle_result_peek(self.result_model.create_index(1))
-
-    def selected_page_up(self):
-        if self.result_model.rowCount() == 0:
-            return
-        self.handle_result_peek(self.result_model.create_index(-self.result_size))
-
-    def repaint_selected_item(self):
-        cur = self.result_model.create_index()
-        self.ws_listview.dataChanged(cur, cur)
-        self.adjust_size()
-        self.ws_listview.scrollTo(self.result_model.create_index())
-
-    def selected_page_down(self):
-        if self.result_model.rowCount() == 0:
-            return
-        self.handle_result_peek(self.result_model.create_index(self.result_size))
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -221,15 +208,53 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.result_model.addItems(results)
 
     def async_change_result(self, results):
-        self.result_model.changeItems(results,self.instant)
+        self.result_model.changeItems(results, self.instant)
         self.instant = False
+        if self.result_model.select.row > -1:  # selected row may has been changed
+            self.ws_listview.scrollTo(self.result_model.create_index())
+
+    def selected_up(self):
+        if self.result_model.rowCount() == 0:
+            return
+        if self.result_model.select.expand and self.result_model.select.selected_menu > -1:
+            self.result_model.select.selected_menu -= 1
+            self.repaint_selected_item()
+        else:
+            self.handle_result_selected(self.result_model.create_index(-1))
+
+    def selected_down(self):
+        if self.result_model.rowCount() == 0:
+            return
+        select = self.result_model.select
+        if select.expand and select.selected_menu < len(self.result_model.selected_item().menus) - 1:
+            self.result_model.select.selected_menu += 1
+            self.repaint_selected_item()
+        else:
+            self.handle_result_selected(self.result_model.create_index(1))
+
+    def selected_page_up(self):
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_selected(self.result_model.create_index(-self.result_size))
+
+    def selected_page_down(self):
+        if self.result_model.rowCount() == 0:
+            return
+        self.handle_result_selected(self.result_model.create_index(self.result_size))
+
+    def repaint_selected_item(self):
+        # when change the selected row's style and display or hide it's menus
+        cur = self.result_model.create_index()
+        self.ws_listview.dataChanged(cur, cur)
+        self.adjust_size()
+        self.ws_listview.scrollTo(self.result_model.create_index())
 
     def handle_text_changed(self):
         if self.debounce_thread.pause:
             self.debounce_thread.resume()
         self.debounce_thread.work = False
 
-    def handle_result_peek(self, index):
+    def handle_result_selected(self, index):
         old = self.result_model.create_index()
         if self.result_model.select.expand:
             self.result_model.select.set_selected(index.row())
@@ -239,7 +264,8 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.dataChanged(index, old)
         self.ws_listview.scrollTo(index)
 
-    def handle_result_selected(self):
+    def handle_result_triggered(self):
+        # triggered the selected result or menu's action
         if self.result_model.select.valid():
             index = self.result_model.data(self.result_model.create_index())
             if self.result_model.select.selected_menu == -1:
@@ -254,16 +280,16 @@ class BeefaloWidget(QWidget, SettingInterface):
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible()
-            return True  # 说明这个事件已被处理，其他控件别插手
+            return True  # returning  True means not to pass to other widget's
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
             if self.result_model.select.valid() and len(self.result_model.selected_item().menus):
+                # change the selected row's vision
                 if self.result_model.select.expand:
                     self.result_model.select.selected_menu = -1
                     self.result_model.select.expand = False
                 else:
                     self.result_model.select.selected_menu = 0
                     self.result_model.select.expand = True
-
                 self.repaint_selected_item()
             return True
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
@@ -278,7 +304,6 @@ class DebounceThread(QThread):
         self.work = False
         self.pause = True
         self.handle = None
-        self.keep = False
 
     def run(self):
         self.obj = QObject()
@@ -293,6 +318,7 @@ class DebounceThread(QThread):
         self.pause = False
         while True:
             if not self.view.instant:
+                # sleep to debounce
                 time.sleep(0.1)
             if self.work:
                 result = []
@@ -306,10 +332,10 @@ class DebounceThread(QThread):
                         if self.view.plugins.get(groups[0]):
                             keyword, text = groups[0], groups[2]
                             matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
-                        if not groups[1]:
+                        if not groups[1]:  # there is not space, so add global plugins
                             matched_plugins += [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
 
-                    if not matched_plugins:
+                    if not matched_plugins:  # haven't matched any plugins, just treat it as global query
                         matched_plugins = [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
 
                     for matched in matched_plugins:
@@ -341,6 +367,7 @@ global sys_tray
 
 
 def start_app():
+    # TODO i18n
     log.info("============================启动Beefalo============================")
     app = QApplication(sys.argv)
     global sys_tray
@@ -357,6 +384,7 @@ def start_app():
     sys_tray_menu.addAction(exit_action)
     sys_tray.setContextMenu(sys_tray_menu)  # 把tpMenu设定为托盘的右键菜单
     sys_tray.show()  # 显示托盘
+
     sys.exit(app.exec_())
 
 

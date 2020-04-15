@@ -10,6 +10,7 @@ from plugin_api import SettingInterface, PluginInfo, get_logger
 mod_keys = {"ctrl": win32con.MOD_CONTROL, "alt": win32con.MOD_ALT, "shift": win32con.MOD_SHIFT}
 log = get_logger("热键")
 
+
 class Hotkey(QThread, SettingInterface):
     sinOut = pyqtSignal()
     inputSinOut = pyqtSignal([str])
@@ -32,7 +33,7 @@ class Hotkey(QThread, SettingInterface):
                 param += 1
                 if not user32.RegisterHotKey(None, param, mod_keys[keys[0]], ord(keys[1])):
                     log.error("快捷键 {} : 注册失败".format(key))
-                    if not to_query:
+                    if not to_query:  # main hotkey
                         raise RuntimeError("主快捷无法注册，应用启动失败")
                 param_map[param] = to_query
         except BaseException as e:
@@ -44,7 +45,7 @@ class Hotkey(QThread, SettingInterface):
                 if msg.message == win32con.WM_HOTKEY:
                     param = int(msg.wParam)
                     if param in param_map:
-                        if not param_map[param]:
+                        if not param_map[param]:  # main hotkey
                             self.sinOut.emit()
                         else:
                             self.inputSinOut.emit(param_map[param])

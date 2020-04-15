@@ -6,6 +6,8 @@ from PyQt5.QtWidgets import QStyledItemDelegate
 
 from result_model import ResultItem
 
+from gui_size import ItemSize
+
 
 class ItemSelection(object):
     def __init__(self):
@@ -102,29 +104,32 @@ DEFAULT_COLOR = {"color": "#000000", "background": "#4f6180", "highlight": "#000
 
 class WidgetDelegate(QStyledItemDelegate):
 
-    def __init__(self, model: ResultListModel, theme=DEFAULT_COLOR):
+    def __init__(self, model: ResultListModel, i_size: ItemSize, theme=DEFAULT_COLOR):
         super(WidgetDelegate, self).__init__()
         self.theme = theme
         self.model = model
+        self.i_size = i_size
 
     def paint(self, painter, option, index):
 
         if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
             background_brush = QBrush(QColor(self.theme["background"]), Qt.SolidPattern)
-            painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), 48), background_brush)
+            painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), self.i_size.height), background_brush)
             if len(index.data().menus) and not self.model.select.expand:
                 pm = QPixmap("images/expand_menu.png")
-                pm = pm.scaled(24, 24, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-                painter.drawPixmap(QPoint(option.rect.width() - 32, option.rect.top() + 12), pm)
+                pm = pm.scaled(self.i_size.drop_size[0], self.i_size.drop_size[1],
+                               Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+                painter.drawPixmap(
+                    QPoint(option.rect.width() - (self.i_size.drop_size[0] + self.i_size.drop_margin[0]),
+                           option.rect.top() + self.i_size.drop_margin[1]), pm)
 
-        font = QFont('微软雅黑', 12)
-        font.setWeight(60)
-        sub_font = QFont('微软雅黑', 9)
-        sub_font.setWeight(sub_font.weight() - 2)
+        font = QFont('微软雅黑', self.i_size.font_size)
+        font.setWeight(self.i_size.font_weight)
+        sub_font = QFont('微软雅黑', self.i_size.sub_font_size)
 
         title = index.data().title
         sub_title = index.data().subTitle
-        icon_size = QSize(32, 32)
+        icon_size = QSize(self.i_size.icon_size[0], self.i_size.icon_size[1])
 
         plugin_path = index.data().plugin_info.path
         if isinstance(index.data().icon, QIcon):
@@ -134,11 +139,15 @@ class WidgetDelegate(QStyledItemDelegate):
                 pm = QPixmap(index.data().icon)
             else:
                 pm = QPixmap(os.path.join(plugin_path, index.data().icon))
-            pm = pm.scaled(32, 32, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            pm = pm.scaled(icon_size.width(), icon_size.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
             icon = QIcon(pm)
-        icon_rect = QRect(7, option.rect.top() + 7, 32, 32)
-        header_rect = QRect(48, icon_rect.top() - 3, option.rect.width() - 96, 21)
-        sub_title_rect = QRect(48, icon_rect.top() + 18, option.rect.width() - 96, 16)
+        icon_rect = QRect(self.i_size.icon_margin[0], option.rect.top() + self.i_size.icon_margin[1], icon_size.width(),
+                          icon_size.height())
+        header_rect = QRect(self.i_size.title_margin[0], option.rect.top() + self.i_size.title_margin[1],
+                            option.rect.width() - self.i_size.height * 2,
+                            self.i_size.title_height)
+        sub_title_rect = QRect(self.i_size.height, header_rect.bottom(), header_rect.width(),
+                               self.i_size.sub_title_height)
 
         color = self.theme["color"]
         if index.data().selected:
@@ -157,18 +166,22 @@ class WidgetDelegate(QStyledItemDelegate):
 
         if self.model.select.expand and self.model.select.row == index.row():
             for i in range(len(index.data().menus)):
-                menu_rect = QRect(48, option.rect.top() + 48 + i * 23, option.rect.width() - 48, 23)
+                menu_rect = QRect(self.i_size.height,
+                                  option.rect.top() + self.i_size.height + i * self.i_size.menu_height,
+                                  option.rect.width() - self.i_size.height, self.i_size.menu_height)
                 if i == self.model.select.selected_menu:
                     background_brush = QBrush(QColor(self.theme["background"]), Qt.SolidPattern)
                     painter.fillRect(menu_rect, background_brush)
                 painter.setFont(sub_font)
                 painter.setPen(QColor(color))
-                painter.drawText(QRect(menu_rect.left() + 7, menu_rect.top(), menu_rect.width(), menu_rect.height()),
-                                 Qt.AlignVCenter, index.data().menus[i].title)
+                painter.drawText(
+                    QRect(menu_rect.left() + self.i_size.menu_left_margin, menu_rect.top(), menu_rect.width(),
+                          menu_rect.height()),
+                    Qt.AlignVCenter, index.data().menus[i].title)
         # painter.restore()
 
     def sizeHint(self, option, index: QModelIndex) -> QSize:
-        height = 46
+        height = self.i_size.height
         if index and index.row() == self.model.select.row and self.model.select.expand:
-            height += 23 * len(index.data().menus)
-        return QSize(100, height)
+            height += self.i_size.menu_height * len(index.data().menus)
+        return QSize(self.i_size.width, height)
