@@ -49,7 +49,7 @@
     },
     "github": {
       "name": "GitHub",
-      "icon": "images/web_search_github3.png",
+      "icon": "images/web_search_github5.png",
       "query": "https://github.com/search?q={text}",
       "home": "https://github.com"
     },

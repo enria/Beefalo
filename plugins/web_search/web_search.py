@@ -160,7 +160,7 @@ class AsyncSuggestThread(QThread):
 
 
 class WebSearchPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon2.png", [], True)
+    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png", [], True)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)

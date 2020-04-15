@@ -1,12 +1,10 @@
 import os
-import sys
 
 from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
 from PyQt5.QtWidgets import QStyledItemDelegate
 
 from result_model import ResultItem
-import traceback
 
 
 class ItemSelection(object):
@@ -64,13 +62,21 @@ class ResultListModel(QAbstractListModel):
             self.endInsertRows()
             self.sinOut.emit()
 
-    def changeItems(self, itemDatas):
+    def changeItems(self, itemDatas, instant):
         change_size = len(itemDatas) != self.rowCount() or self.select.expand
         self.clear()
         if itemDatas:
-            self.select.set_selected(0)
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(itemDatas) - 1)
             self.listItemData = itemDatas
+            if instant:
+                if self.select.row == -1:
+                    self.select.set_selected(0)
+                elif self.select.row >= self.rowCount():
+                    self.select.set_selected(self.rowCount() - 1)
+                else:
+                    self.select.set_selected(self.select.row)
+            else:
+                self.select.set_selected(0)
             self.endInsertRows()
         else:
             self.select.set_selected(-1)

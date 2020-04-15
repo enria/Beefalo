@@ -37,6 +37,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
         self.delegate = WidgetDelegate(self.result_model)
+        self.instant = False
 
         self.hotKeys = Hotkey(self.get_setting("hotkeys"))
         self.add_global_hotkey()
@@ -76,7 +77,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
-            log.info("插件初始化：{}".format(plugin.meta_info.name))
+            # log.info("插件初始化：{}".format(plugin.meta_info.name))
             if len(plugin.meta_info.keywords):
                 for keyword in plugin.meta_info.keywords:
                     if self.plugins.get(keyword):
@@ -170,6 +171,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def set_input_text(self, text):
         if self.ws_input.text() == text:
+            self.instant = True
             self.handle_text_changed()
         else:
             self.ws_input.setText(text)
@@ -219,9 +221,8 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.result_model.addItems(results)
 
     def async_change_result(self, results):
-        self.result_model.changeItems(results)
-        if len(results):
-            self.handle_result_peek(self.result_model.createIndex(0, 0))
+        self.result_model.changeItems(results,self.instant)
+        self.instant = False
 
     def handle_text_changed(self):
         if self.debounce_thread.pause:
@@ -277,6 +278,7 @@ class DebounceThread(QThread):
         self.work = False
         self.pause = True
         self.handle = None
+        self.keep = False
 
     def run(self):
         self.obj = QObject()
@@ -290,7 +292,8 @@ class DebounceThread(QThread):
         self.work = True
         self.pause = False
         while True:
-            time.sleep(0.1)
+            if not self.view.instant:
+                time.sleep(0.1)
             if self.work:
                 result = []
                 query = self.view.ws_input.text()
@@ -336,9 +339,11 @@ class DebounceThread(QThread):
 
 global sys_tray
 
-if __name__ == '__main__':
+
+def start_app():
     log.info("============================启动Beefalo============================")
     app = QApplication(sys.argv)
+    global sys_tray
     sys_tray = QSystemTrayIcon(app)
     window = BeefaloWidget(app)
 
@@ -352,5 +357,8 @@ if __name__ == '__main__':
     sys_tray_menu.addAction(exit_action)
     sys_tray.setContextMenu(sys_tray_menu)  # 把tpMenu设定为托盘的右键菜单
     sys_tray.show()  # 显示托盘
-
     sys.exit(app.exec_())
+
+
+if __name__ == '__main__':
+    start_app()

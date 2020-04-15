@@ -5,7 +5,8 @@
     "alt+G": "g ",
     "alt+F": "find ",
     "alt+P": "pl ",
-    "alt+D": "dict "
+    "alt+D": "dict ",
+    "alt+T": "todo "
   },
   "result_size": 6
 }
