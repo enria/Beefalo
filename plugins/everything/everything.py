@@ -2,6 +2,7 @@ import os
 import ctypes
 from ctypes.wintypes import *
 import platform
+import subprocess
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
@@ -14,12 +15,17 @@ from file_icon import file_icons
 
 log = get_logger("Everything")
 
+
 def open_file(file, plugin_info, api):
     try:
         os.startfile(file)
     except BaseException as e:
         api.show_message("无法打开文件", str(e),
                          QIcon(os.path.join(plugin_info.path, "images/everything_error.png")), 1000)
+
+
+def to_file_path(file):
+    subprocess.Popen(r'explorer /select,' + file)
 
 
 def copy_to_clipboard(text):
@@ -55,7 +61,7 @@ class FileResultItem(ResultItem):
             self.icon = os.path.join("images", "icons", self.icon + ".svg")
         self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
         self.menus = [
-            MenuItem("打文件所在位置", ResultAction(open_file, True, os.path.dirname(self.subTitle), plugin_info, api)),
+            MenuItem("打文件所在位置", ResultAction(to_file_path, True, self.subTitle)),
             MenuItem("复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
             MenuItem("复制文件", ResultAction(copy_file, True, self.subTitle))]
 

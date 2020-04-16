@@ -71,7 +71,7 @@ class TodoPlugin(AbstractPlugin):
         results = []
         for todo in todos:
             to_query = "{} {}".format(keyword, text)
-            icon = "images/todo_check1.png" if todo.check else "images/todo_todo1.png"
+            icon = "images/o-c.png" if todo.check else "images/c.png"
             action = ResultAction(self.change_status, False, todo.id, to_query)
             item = ResultItem(self.meta_info, todo.text, todo.time, icon, action)
             item.menus = [MenuItem("复制", ResultAction(QGuiApplication.clipboard().setText, True, todo.text)),
@@ -80,6 +80,6 @@ class TodoPlugin(AbstractPlugin):
         if text.strip():
             to_query = "{} ".format(keyword)
             action = ResultAction(self.add_todo, False, text, to_query)
-            item = ResultItem(self.meta_info, text, "新增TODO", "images/todo_add.png", action)
+            item = ResultItem(self.meta_info, text, "新增TODO", "images/plus-o (1).png", action)
             results.append(item)
         return results

@@ -29,6 +29,16 @@
         "title": "ele.get_text()",
         "url": "'https://docs.oracle.com/javase/8/docs/api/'+ele.attrs['href']"
       }
+    },
+    "http": {
+      "url": "https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html",
+      "section_selector": "h3",
+      "icon": "images/API_http.png",
+      "local": false,
+      "content": {
+        "title": "' '.join(ele.findAll(text=True, recursive=False))",
+        "url": "'https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#'+ele.select('a')[0].attrs['id']"
+      }
     }
   }
 }
