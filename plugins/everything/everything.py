@@ -97,7 +97,8 @@ global everything_dll
 
 def everything_query(root, text, query_max, plugin_info, api, system_icon):
     if root:
-        everything_dll.Everything_SetSearchW(root + " " + text)
+        root_path = "|".join(["<{}>".format(path) for path in root])
+        everything_dll.Everything_SetSearchW(root_path + " " + text)
     else:
         everything_dll.Everything_SetSearchW(text)
     if query_max:

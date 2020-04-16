@@ -1,4 +1,4 @@
-file_icons = {"*": "file", "folder": "folder", "lnk": "shortcut",
+file_icons = {"*": "file", "folder": "folder", "lnk": "shortcut","xsh":"console",
               "html": "html", "htm": "html", "xhtml": "html", "html_vm": "html", "asp": "html",
               "jade": "pug",
               "pug": "pug",
