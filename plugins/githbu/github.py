@@ -3,11 +3,9 @@ import requests
 import re
 import json
 
-from PyQt5.QtGui import QImage, QIcon, QPixmap
+from PyQt5.QtGui import QIcon, QPixmap
 from bs4 import BeautifulSoup
 from functools import lru_cache
-from lxml import etree
-from PyQt5.QtCore import QThread, pyqtSignal
 
 from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin, get_logger
 from result_model import ResultItem, ResultAction, MenuItem
@@ -74,6 +72,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
         SettingInterface.__init__(self)
         self.api = api
         self.user_name = self.get_setting("user")["name"]
+        self.user_token = "".join(self.get_setting("user")["token"])
         self.proxy = self.get_setting("proxy")
         global proxy
         proxy = self.proxy
@@ -181,8 +180,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
         url = "https://api.github.com/user/repos"
         try:
             repos = []
-            resp = requests.get(url, headers={"Authorization": "token " + self.get_setting("user")["token"]},
-                                proxies=self.proxy)
+            resp = requests.get(url,headers = {"Authorization": "token " + self.user_token}, proxies=self.proxy)
             if resp.status_code == 200:
                 repos = json.loads(resp.text)
             results = []
