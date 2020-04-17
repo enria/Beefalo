@@ -39,6 +39,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             tip = text
         doc_matchs, total_match = [], False
         if doc_search:
+            doc_search=doc_search.lower()
             for doc in os.listdir(self.doc_root):
                 if doc.endswith(".md") and not os.path.isdir(doc) and str(doc[0:-3]).find(doc_search) > -1:
                     doc_matchs.append(doc)

@@ -4,7 +4,8 @@
     "alt+S": "sj ",
     "alt+F": "find ",
     "alt+D": "dict ",
-    "alt+T": "todo "
+    "alt+T": "todo ",
+    "alt+G": "ghb "
   },
   "result_size": 6
 }

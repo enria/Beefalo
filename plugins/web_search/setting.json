@@ -1,6 +1,7 @@
 {
   "proxy": {
-    "http": "socks5://127.0.0.1:1080"
+    "http": "socks5://127.0.0.1:1080",
+    "https": "socks5://127.0.0.1:1080"
   },
   "default": {
     "engine": "google",
@@ -46,12 +47,6 @@
       "query": "https://en.wikipedia.org/wiki/{text}",
       "home": "https://en.wikipedia.org/wiki/Main_Page",
       "suggestion": "Wikipedia"
-    },
-    "github": {
-      "name": "GitHub",
-      "icon": "images/web_search_github5.png",
-      "query": "https://github.com/search?q={text}",
-      "home": "https://github.com"
     },
     "zhihu": {
       "name": "知乎",

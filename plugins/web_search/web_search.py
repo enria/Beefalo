@@ -2,6 +2,7 @@ import webbrowser
 import requests
 import re
 import json
+from bs4 import BeautifulSoup
 
 from lxml import etree
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -19,6 +20,14 @@ class SearchEngine:
         self.name = name
         self.home = home
         self.suggestion = suggestion
+        self.direct = True
+
+
+class SearchItem(object):
+    def __init__(self, text, query=None, sub_title=None):
+        self.text = text.strip()
+        self.query = query if query else self.text
+        self.sub_title = sub_title
 
 
 class SearchSuggestion:
@@ -27,15 +36,12 @@ class SearchSuggestion:
     def __init__(self):
         pass
 
-    def suggest(self, text):
+    def suggest(self, text) -> list:
         pass
 
 
 class BaiduSuggestion(SearchSuggestion):
     url = "http://suggestion.baidu.com/su"
-
-    def __init__(self):
-        pass
 
     def suggest(self, text):
         try:
@@ -43,7 +49,7 @@ class BaiduSuggestion(SearchSuggestion):
             if resp.status_code == 200:
                 sug_match = re.match(r".*(\[.*\]).*", resp.text)
                 if sug_match:
-                    return json.loads(sug_match.groups()[0])
+                    return [SearchItem(text) for text in json.loads(sug_match.groups()[0])]
         except BaseException as e:
             log.error(str(e))
         return []
@@ -53,6 +59,7 @@ class GoogleSuggestion(SearchSuggestion):
     url = "http://suggestqueries.google.com/complete/search?output=toolbar&hl=en"
 
     def __init__(self, proxy):
+        super().__init__()
         self.proxy = proxy
 
     def suggest(self, text):
@@ -60,7 +67,7 @@ class GoogleSuggestion(SearchSuggestion):
             resp = requests.get(self.url, {"q": text}, proxies=self.proxy)
             if resp.status_code == 200:
                 dom = etree.fromstring(resp.text.encode("utf-8"))
-                return dom.xpath('//suggestion//@data')
+                return [SearchItem(text) for text in dom.xpath('//suggestion//@data')]
         except BaseException as e:
             log.error(str(e))
         return []
@@ -68,9 +75,6 @@ class GoogleSuggestion(SearchSuggestion):
 
 class BilibiliSuggestion(SearchSuggestion):
     url = "https://s.search.bilibili.com/main/suggest?suggest_type=accurate"
-
-    def __init__(self):
-        pass
 
     def suggest(self, text):
         try:
@@ -87,14 +91,14 @@ class ZhihuSuggestion(SearchSuggestion):
     url = "https://www.zhihu.com/api/v4/search/suggest"
 
     def __init__(self):
-        pass
+        super().__init__()
 
     def suggest(self, text):
         try:
             resp = requests.get(self.url, {"q": text}, headers={"User-Agent": "PostmanRuntime/7.24.0"})
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
-                return [item["query"] for item in json_data["suggest"]]
+                return [SearchItem(text) for text in json_data["suggest"]]
         except BaseException as e:
             log.error(e)
         return []
@@ -104,6 +108,7 @@ class WikiSuggestion(SearchSuggestion):
     url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json"
 
     def __init__(self, proxy):
+        super().__init__()
         self.proxy = proxy
 
     def suggest(self, text):
@@ -114,19 +119,63 @@ class WikiSuggestion(SearchSuggestion):
                                 proxies=self.proxy)
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
-                return json_data[1]
+                return [SearchItem(text) for text in json_data[1]]
+        except BaseException as e:
+            print(e)
+        return []
+
+
+class GithubSuggestion(SearchSuggestion):
+    url = "https://github.com/search?type=Repositories"
+
+    def __init__(self, proxy):
+        super().__init__()
+        self.proxy = proxy
+        self.page = 2
+
+    def suggest(self, text):
+        if not text.strip():
+            return []
+        try:
+            repos = []
+            for p in range(self.page):
+                resp = requests.get(self.url, {"q": text, "p": p + 1}, proxies=self.proxy)
+                if resp.status_code == 200:
+                    dom = BeautifulSoup(resp.text, "html.parser")
+                    repos += dom.select(".repo-list li .mt-n1")
+            results = []
+            for repo in repos:
+                if repo.select(".text-normal a"):
+                    repo_name = repo.select(".text-normal a")[0].get_text()
+                else:
+                    continue
+                info = repo.select(".text-small")[0]
+
+                star = ""
+                if info.select(".mr-3") and info.select(".mr-3")[0].select("a"):
+                    star = "★" + info.select(".mr-3")[0].select("a")[0].get_text().strip()
+
+                language = ""
+                if info.select('span[itemprop="programmingLanguage"]'):
+                    language = "✎" + info.select('span[itemprop="programmingLanguage"]')[0].get_text().strip()
+
+                desc = ""
+                if repo.select("p.mb-1"):
+                    desc = repo.select("p.mb-1")[0].get_text().strip()
+                results.append(SearchItem(repo_name, repo_name, "{} {} {}".format(star, language, desc)))
+            return results
         except BaseException as e:
             print(e)
         return []
 
 
 class WebSearchResultItem(ResultItem):
-    def __init__(self, plugin_info, engine: SearchEngine, text):
+    def __init__(self, plugin_info, engine: SearchEngine, item: SearchItem):
         super().__init__(plugin_info)
-        if len(text.strip()):
-            self.url = engine.url.format(text=text)
-            self.title = text
-            self.subTitle = "搜索 " + engine.name
+        if item.text:
+            self.url = engine.url.format(text=item.query)
+            self.title = item.text
+            self.subTitle = item.sub_title if item.sub_title else "搜索 " + engine.name
         else:
             self.url = engine.home
             self.title = engine.name
@@ -152,10 +201,10 @@ class AsyncSuggestThread(QThread):
         self.token = token
 
     def run(self):
-        texts = self.suggestion.suggest(self.text)
+        items = self.suggestion.suggest(self.text)
         results = []
-        for t in texts:
-            results.append(WebSearchResultItem(self.plugin_info, self.engine, t))
+        for item in items:
+            results.append(WebSearchResultItem(self.plugin_info, self.engine, item))
         self.sinOut.emit(self.token, results)
 
 
@@ -169,8 +218,11 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
         keys = ["*"]
         for key in self.engines:
             info = self.engines[key]
-            self.engines[key] = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
-                                             info.get("suggestion"))
+            engine = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
+                                  info.get("suggestion"))
+            if "direct" in info:
+                engine.direct = info["direct"]
+            self.engines[key] = engine
             keys.append(key)
         self.meta_info.keywords = keys
         self.default_engine = self.get_setting("default")["engine"]
@@ -179,7 +231,8 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
                             "Baidu": BaiduSuggestion(),
                             "Bilibili": BilibiliSuggestion(),
                             "知乎": ZhihuSuggestion(),
-                            "Wikipedia": WikiSuggestion(self.get_setting("proxy"))}
+                            "Wikipedia": WikiSuggestion(self.get_setting("proxy")),
+                            "Github": GithubSuggestion(self.get_setting("proxy"))}
         self.default_suggest = self.get_setting("default")["suggestion"]
 
     def query(self, keyword, text, token=None, parent=None):
@@ -188,7 +241,8 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
             engine = self.engines[keyword]
         else:
             engine = self.engines[self.default_engine]
-        results.append(WebSearchResultItem(self.meta_info, engine, text))
+        if engine.direct:
+            results.append(WebSearchResultItem(self.meta_info, engine, SearchItem(text)))
         if engine.suggestion:
             suggest = self.suggestions.get(engine.suggestion)
         else:
