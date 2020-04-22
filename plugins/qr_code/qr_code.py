@@ -1,10 +1,11 @@
 import os
-import re
-import subprocess
-from enum import Enum, unique
 import qrcode
+from flask import Flask, send_file, render_template, make_response
+import threading
+import re
+import hashlib
 
-from PyQt5 import QtGui, QtCore
+from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication, QPixmap
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QDesktopWidget, QLabel
@@ -56,6 +57,61 @@ class Dialog(QDialog):
 
 clipboard = QGuiApplication.clipboard()
 
+app = Flask(__name__,
+            static_url_path='/assets',
+            static_folder='templates/assets')
+
+
+class WebServer(threading.Thread):
+    def __init__(self):
+        threading.Thread.__init__(self)
+        self.web_file = "README.md"
+        self.web_text = "None"
+        self.server_host = "192.168.43.153"
+        self.server_port = 21345
+
+        @app.route('/file')
+        def download_file():
+            if self.web_file:
+                file_name = os.path.basename(self.web_file)
+                response = make_response(send_file(self.web_file, as_attachment=True))
+                response.headers["Content-Disposition"] = "attachment; filename={}".format(
+                    file_name.encode().decode('latin-1'))
+                return response
+            else:
+                return "File not found"
+
+        @app.route('/text')
+        def print_text():
+            return render_template('text.html', text=self.web_text)
+
+    def run(self):
+        app.run(port=self.server_port, host=self.server_host)
+
+    def set_text(self, text: str):
+
+        if re.match(r"^https?://.+", text):
+            return text
+
+        route = ""
+        if text.startswith("file:///"):
+            file_path = re.sub("^file:///", "", text)
+            if os.path.isfile(file_path):
+                md5 = hashlib.md5()
+                md5.update(file_path.encode("utf-8"))
+                self.web_file = file_path
+                route = "file?hash=" + md5.hexdigest()
+
+        if not route:
+            self.web_text = text
+            route = "text"
+
+        return "http://{}:{}/{}".format(self.server_host, self.server_port, route)
+
+
+server = WebServer()
+server.start()
+
 
 class QrCodePlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("QR Code", "Generate Qr Code by what you are typing", "images/qrcode_icon.png",
@@ -73,7 +129,8 @@ class QrCodePlugin(AbstractPlugin, SettingInterface):
         results = []
         if not text:
             text = QGuiApplication.clipboard().text()
+        url = server.set_text(text)
         results.append(ResultItem(self.meta_info,
-                                  "Generate QR code image", text, "images/qrcode_icon.png",
-                                  ResultAction(self.show_qrcode, True, text)))
+                                  "Generate QR Code", text, "images/qrcode_icon.png",
+                                  ResultAction(self.show_qrcode, True, url)))
         return results

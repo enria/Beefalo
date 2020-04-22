@@ -5,7 +5,8 @@
     "alt+F": "find ",
     "alt+D": "dict ",
     "alt+T": "todo ",
-    "alt+G": "ghb "
+    "alt+G": "ghb ",
+    "alt+Q": "qrc "
   },
   "result_size": 6
 }
