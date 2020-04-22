@@ -7,9 +7,11 @@ import ctypes
 import re
 import importlib
 import win32con
+from PyQt5 import QtGui
+from PyQt5.QtMultimedia import QSound, QMediaPlayer, QMediaContent
 from win32process import SuspendThread, ResumeThread
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt, QUrl
 from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
@@ -52,6 +54,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.plugin_types = []
         self.load_plugins()
         self.token = None
+        self.player = QMediaPlayer(self)  # 1
 
         self.installEventFilter(self)
 
@@ -62,6 +65,11 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.result_size = min(10, max(4, self.get_setting("result_size")))
         self.result_item_height = self.delegate.i_size.height
         self.init_ui()
+
+    def play_media(self, media_content):
+        self.player.setMedia(media_content)
+        # self.player.setVolume(80)
+        self.player.play()
 
     def load_plugins(self):
         plugins_dir = "plugins"
@@ -81,7 +89,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         api = ContextApi(self.set_input_text, sys_tray.showMessage,
                          self.change_theme, self.plugin_types, self,
-                         self.get_theme, self.async_change_result)
+                         self.get_theme, self.async_change_result, self.play_media)
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
@@ -126,6 +134,9 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum))
         self.ws_listview.clicked.connect(self.handle_result_triggered)
         self.ws_listview.setCursor(QCursor(Qt.PointingHandCursor))
+        self.ws_listview.installEventFilter(self)
+        self.ws_listview.setMouseTracking(True)
+        self.ws_listview.mouseMoveEvent = self.mouseMoveEvent
 
         vly.addWidget(self.ws_input)
         vly.addWidget(self.ws_listview)
@@ -141,10 +152,15 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.show()
         self.activateWindow()
 
+    def mouseMoveEvent(self, e):
+        # todo mouse select result item
+        # print(e.flags())
+        pass
+
     def adjust_size(self):
         base_height = self.m_size.editor_height + self.m_size.main_padding[1] * 2
-        max_height = base_height + self.m_size.result_margin_top \
-                     + self.result_size * self.result_item_height
+        max_height = base_height + self.m_size.result_margin_top + \
+                     self.result_size * self.result_item_height
         height, cnt = base_height, self.result_model.rowCount()
         if cnt:
             height += self.m_size.result_margin_top
@@ -264,8 +280,9 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.dataChanged(index, old)
         self.ws_listview.scrollTo(index)
 
-    def handle_result_triggered(self):
-        # triggered the selected result or menu's action
+    def handle_result_triggered(self, index=None):
+        if index:
+            self.handle_result_selected(index)
         if self.result_model.select.valid():
             index = self.result_model.data(self.result_model.create_index())
             if self.result_model.select.selected_menu == -1:
@@ -292,6 +309,9 @@ class BeefaloWidget(QWidget, SettingInterface):
                     self.result_model.select.expand = True
                 self.repaint_selected_item()
             return True
+        if obj == self.ws_listview:
+            # print(event)
+            pass
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
 
 
@@ -373,6 +393,12 @@ def start_app():
     global sys_tray
     sys_tray = QSystemTrayIcon(app)
     window = BeefaloWidget(app)
+
+    # I found the problem by trial and error.
+    # It turned out the application closed only when mother is not shown.
+    # The reason is that the default behavior is to quit the app when the last window close.
+    # As the mother class is used as a daemon, this line must be added to change that behavior:
+    app.setQuitOnLastWindowClosed(False)
 
     sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
     sys_tray_menu = QMenu()

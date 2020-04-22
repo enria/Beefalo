@@ -6,7 +6,8 @@ from logging.handlers import TimedRotatingFileHandler
 
 
 class ContextApi:
-    def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme, change_results):
+    def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme, change_results,
+                 play_meida):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
@@ -14,6 +15,7 @@ class ContextApi:
         self.main_window = main_window
         self.get_theme = get_theme
         self.change_results = change_results
+        self.play_media = play_meida
 
 
 class PluginInfo(object):

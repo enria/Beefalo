@@ -79,6 +79,13 @@
       "query": "http://dict.cn/{text}",
       "home": "http://dict.cn",
       "suggestion": "None"
+    },
+    "emj": {
+      "name": "Emojipedia",
+      "icon": "images/web_search_emojipedia.png",
+      "query": "https://emojipedia.org/search/?q={text}",
+      "home": "https://emojipedia.org",
+      "suggestion": "None"
     }
   }
 }

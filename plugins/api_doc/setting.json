@@ -36,8 +36,18 @@
       "icon": "images/API_http.png",
       "local": false,
       "content": {
-        "title": "' '.join(ele.findAll(text=True, recursive=False))",
+        "title": "' '.join(ele.findAll(text=True, recursive=False)).strip()",
         "url": "'https://www.w3.org/Protocols/rfc2616/rfc2616-sec10.html#'+ele.select('a')[0].attrs['id']"
+      }
+    },
+    "qt": {
+      "url": "https://doc.qt.io/qtforpython/",
+      "section_selector": "li a",
+      "icon": "images/API_qt.png",
+      "local": "C:/Users/13972/Documents/Beefalo/api/qt.html",
+      "content": {
+        "title": "ele.get_text()",
+        "url": "'https://doc.qt.io/qtforpython/PySide2/'+ele.attrs['href']"
       }
     }
   }

@@ -1,1 +1,5 @@
-var textData=`{"timeline_url":"https://github.com/timeline","user_url":"https://github.com/{user}","current_user_public_url":"https://github.com/enria","security_adviso ries_url":"https://github.com/security-advisories","_links":{"timeline":{"href":"https://github.com/timeline","type":"application/atom+xml"},"user":{"href ":"https://github.com/{user}","type":"application/atom+xml"},"current_user_public":{"href":"https://github.com/enria","type":"application/atom+xml"},"secu rity_advisories":{"href":"https://github.com/security-advisories","type":"application/atom+xml"}}}`
+var textData=`"可以看到，最终的效果是只需要在alfred中输入一个命令：ssh aliyun，就直接连接上了aliyun的远程服务器了，一步搞定。到这里，我们的目标就实现了。你可能会遇到这种情况,登录线上机器需要先登录堡垒机，才能登录线上机器，比较麻烦，如果想在alfred中一步搞定，实现这个目标，需要借助另一个神器:tmux，后文续说"+
+""+
+"版权所属mxr_it@163.com，skyler_11@163.com，转载经标明原作链接"+
+""+
+"原味地址：开发效率神提升之alfred集成ssh+iterm"`

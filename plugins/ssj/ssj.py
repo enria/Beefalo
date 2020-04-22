@@ -39,7 +39,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             tip = text
         doc_matchs, total_match = [], False
         if doc_search:
-            doc_search=doc_search.lower()
+            doc_search = doc_search.lower()
             for doc in os.listdir(self.doc_root):
                 if doc.endswith(".md") and not os.path.isdir(doc) and str(doc[0:-3]).find(doc_search) > -1:
                     doc_matchs.append(doc)
@@ -56,13 +56,13 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
                         to_query = "{} {}{}".format(keyword, str(doc[0:-3]), mode)
                         action = ResultAction(self.api.change_query, False, to_query)
                         item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
-                        item.menus = [MenuItem("删除", ResultAction(self.deleteDoc, doc))]
+                        item.menus = [MenuItem("🗑️ 删除", ResultAction(self.deleteDoc, doc))]
                         results.append(item)
                 with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
                     clipboard = QGuiApplication.clipboard()
                     for line in doc.readlines():
                         if line.strip():
-                            item_match = re.match("\\[(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2})] (.*)", line)
+                            item_match = re.match(r"\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})]\s(.*)", line)
                             if item_match:
                                 copy_action = ResultAction(clipboard.setText, True, item_match.groups()[1])
                                 item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
@@ -71,7 +71,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
                                 copy_action = ResultAction(clipboard.setText, True, line)
                                 item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
                             delete_action = ResultAction(self.deleteTip, False, doc_search + ".md", line)
-                            item.menus = [MenuItem("复制", copy_action), MenuItem("删除", delete_action)]
+                            item.menus = [MenuItem("📋 复制", copy_action), MenuItem("删除", delete_action)]
                             results.append(item)
 
             else:
@@ -80,7 +80,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
                                           "{} {}:".format(keyword, str(doc[0:-3])))
                     item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
                     item.menus = [
-                        MenuItem("删除", ResultAction(self.deleteDoc, False, doc, "{} {}".format(keyword, text)))]
+                        MenuItem("🗑️ 删除", ResultAction(self.deleteDoc, False, doc, "{} {}".format(keyword, text)))]
                     results.append(item)
 
         else:

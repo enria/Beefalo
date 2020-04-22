@@ -33,14 +33,14 @@ class RepositoryItem(ResultItem):
             language = "✎ %s   " % repo["language"]
         desc = ""
         if repo.get("description"):
-            desc = "❏ %s" % repo["description"]
+            desc = "📝 %s" % repo["description"]
         action = ResultAction(webbrowser.open, True, "https://github.com/" + repo["full_name"])
         super().__init__(plugin_info, repo["full_name"], "{}{}{}".format(star, language, desc),
                          "images/github_repository.png", action)
         if repo["private"]:
             self.icon = "images/github_repository_private.png"
         issue_action = ResultAction(webbrowser.open, True, "https://github.com/{}/issues".format(repo["full_name"]))
-        self.menus = [MenuItem("Issues", issue_action)]
+        self.menus = [MenuItem("📬 Issues", issue_action)]
 
 
 class EventItem(ResultItem):
@@ -62,7 +62,7 @@ class EventItem(ResultItem):
         else:
             action = ResultAction(webbrowser.open, True, "https://github.com/" + event["repo"]["name"])
         super().__init__(plugin_info, event["repo"]["name"], desc,
-                         get_icon(event["actor"]["avatar_url"]), action)
+                         "images/github_icon.png", action)
 
 
 class GithubPlugin(AbstractPlugin, SettingInterface):
@@ -100,23 +100,27 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                 results = [search_in_page, search_repository]
             return results
         else:
+            home = ResultItem(self.meta_info, "Home",
+                              "My (%s) GitHub home page" % self.user_name,
+                              "images/github_icon.png",
+                              ResultAction(webbrowser.open, True, "https://github.com/"))
             feeds = ResultItem(self.meta_info, "Recent activity",
                                "My (%s) recent activity" % self.user_name,
-                               "images/github_icon.png",
+                               "images/github_news.png",
                                ResultAction(self.api.change_query, False, "{} recent:".format(keyword)))
             events = ResultItem(self.meta_info, "All activity",
                                 "My (%s) all activity" % self.user_name,
-                                "images/github_icon.png",
+                                "images/github_friends.png",
                                 ResultAction(self.api.change_query, False, "{} all:".format(keyword)))
             repositories = ResultItem(self.meta_info, "Repositories",
                                       "My (%s) repositories" % self.user_name,
-                                      "images/github_icon.png",
+                                      "images/github_repository.png",
                                       ResultAction(self.api.change_query, False, "{} repo:".format(keyword)))
             trending = ResultItem(self.meta_info, "Trending",
                                   "See what the GitHub community is most excited about today.",
-                                  "images/github_icon.png",
+                                  "images/github_trending.png",
                                   ResultAction(self.api.change_query, False, "{} trend:".format(keyword)))
-            return [feeds, events, repositories, trending]
+            return [home, feeds, events, repositories, trending]
 
     def search_repository(self, name):
         url = "https://api.github.com/search/repositories"
@@ -134,7 +138,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                                       ResultAction(webbrowser.open, True, "https://github.com/search?q=" + name)))
             self.api.change_results(results)
         except BaseException as e:
-            print(e)
+            log.error(e)
 
     def recent_activity(self):
         url = "https://github.com/dashboard/recent-activity"
@@ -146,7 +150,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                 results = []
                 for activity in activities:
                     item = ResultItem(self.meta_info, activity.select(".dashboard-break-word a")[0].get_text().strip())
-                    item.subTitle = "✉ {}   {}".format(
+                    item.subTitle = "💬 {}   {}".format(
                         activity.select("div.flex-column div.text-gray")[0].get_text().strip(),
                         re.sub(r"\W{2,}", " ",
                                activity.select(".dashboard-break-word.lh-condensed.text-gray.f6.mt-1")[
@@ -158,7 +162,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                     results.append(item)
                 return results
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []
 
     def my_activity(self):
@@ -173,14 +177,14 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                 results.append(EventItem(self.meta_info, event))
             return results
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []
 
     def my_repositories(self):
         url = "https://api.github.com/user/repos"
         try:
             repos = []
-            resp = requests.get(url,headers = {"Authorization": "token " + self.user_token}, proxies=self.proxy)
+            resp = requests.get(url, headers={"Authorization": "token " + self.user_token}, proxies=self.proxy)
             if resp.status_code == 200:
                 repos = json.loads(resp.text)
             results = []
@@ -188,7 +192,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                 results.append(RepositoryItem(self.meta_info, repo))
             return results
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []
 
     def github_trending(self):
@@ -215,5 +219,5 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                 results.append(RepositoryItem(self.meta_info, repo))
             return results
         except BaseException as e:
-            print(e)
+            log.error(e)
         return []

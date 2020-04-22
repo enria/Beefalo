@@ -74,8 +74,8 @@ class TodoPlugin(AbstractPlugin):
             icon = "images/o-c.png" if todo.check else "images/c.png"
             action = ResultAction(self.change_status, False, todo.id, to_query)
             item = ResultItem(self.meta_info, todo.text, todo.time, icon, action)
-            item.menus = [MenuItem("复制", ResultAction(QGuiApplication.clipboard().setText, True, todo.text)),
-                          MenuItem("删除", ResultAction(self.change_status, False, todo.id, to_query, True))]
+            item.menus = [MenuItem("📋 复制", ResultAction(QGuiApplication.clipboard().setText, True, todo.text)),
+                          MenuItem("🗑️ 删除", ResultAction(self.change_status, False, todo.id, to_query, True))]
             results.append(item)
         if text.strip():
             to_query = "{} ".format(keyword)

@@ -81,7 +81,7 @@ class BilibiliSuggestion(SearchSuggestion):
             resp = requests.get(self.url, {"term": text})
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
-                return [json_data[item]["value"] for item in json_data]
+                return [SearchItem(json_data[item]["value"]) for item in json_data]
         except BaseException as e:
             log.error(e)
         return []
@@ -120,50 +120,6 @@ class WikiSuggestion(SearchSuggestion):
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
                 return [SearchItem(text) for text in json_data[1]]
-        except BaseException as e:
-            print(e)
-        return []
-
-
-class GithubSuggestion(SearchSuggestion):
-    url = "https://github.com/search?type=Repositories"
-
-    def __init__(self, proxy):
-        super().__init__()
-        self.proxy = proxy
-        self.page = 2
-
-    def suggest(self, text):
-        if not text.strip():
-            return []
-        try:
-            repos = []
-            for p in range(self.page):
-                resp = requests.get(self.url, {"q": text, "p": p + 1}, proxies=self.proxy)
-                if resp.status_code == 200:
-                    dom = BeautifulSoup(resp.text, "html.parser")
-                    repos += dom.select(".repo-list li .mt-n1")
-            results = []
-            for repo in repos:
-                if repo.select(".text-normal a"):
-                    repo_name = repo.select(".text-normal a")[0].get_text()
-                else:
-                    continue
-                info = repo.select(".text-small")[0]
-
-                star = ""
-                if info.select(".mr-3") and info.select(".mr-3")[0].select("a"):
-                    star = "★" + info.select(".mr-3")[0].select("a")[0].get_text().strip()
-
-                language = ""
-                if info.select('span[itemprop="programmingLanguage"]'):
-                    language = "✎" + info.select('span[itemprop="programmingLanguage"]')[0].get_text().strip()
-
-                desc = ""
-                if repo.select("p.mb-1"):
-                    desc = repo.select("p.mb-1")[0].get_text().strip()
-                results.append(SearchItem(repo_name, repo_name, "{} {} {}".format(star, language, desc)))
-            return results
         except BaseException as e:
             print(e)
         return []
@@ -231,8 +187,7 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
                             "Baidu": BaiduSuggestion(),
                             "Bilibili": BilibiliSuggestion(),
                             "知乎": ZhihuSuggestion(),
-                            "Wikipedia": WikiSuggestion(self.get_setting("proxy")),
-                            "Github": GithubSuggestion(self.get_setting("proxy"))}
+                            "Wikipedia": WikiSuggestion(self.get_setting("proxy"))}
         self.default_suggest = self.get_setting("default")["suggestion"]
 
     def query(self, keyword, text, token=None, parent=None):

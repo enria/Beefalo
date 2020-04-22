@@ -61,9 +61,9 @@ class FileResultItem(ResultItem):
             self.icon = os.path.join("images", "icons", self.icon + ".svg")
         self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
         self.menus = [
-            MenuItem("打文件所在位置", ResultAction(to_file_path, True, self.subTitle)),
-            MenuItem("复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
-            MenuItem("复制文件", ResultAction(copy_file, True, self.subTitle))]
+            MenuItem("📂 打文件所在位置", ResultAction(to_file_path, True, self.subTitle)),
+            MenuItem("📋 复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
+            MenuItem("📋 复制文件", ResultAction(copy_file, True, self.subTitle))]
 
 
 class AsyncSearchThread(QThread):

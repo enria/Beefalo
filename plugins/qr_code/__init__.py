@@ -1,0 +1,1 @@
+from qr_code import QrCodePlugin

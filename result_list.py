@@ -2,7 +2,7 @@ import os
 
 from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
-from PyQt5.QtWidgets import QStyledItemDelegate
+from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate
 
 from result_model import ResultItem
 
@@ -102,7 +102,7 @@ class ResultListModel(QAbstractListModel):
 DEFAULT_COLOR = {"color": "#000000", "background": "#4f6180", "highlight": "#000000"}
 
 
-class WidgetDelegate(QStyledItemDelegate):
+class WidgetDelegate(QAbstractItemDelegate):
 
     def __init__(self, model: ResultListModel, i_size: ItemSize, theme=DEFAULT_COLOR):
         super(WidgetDelegate, self).__init__()
@@ -123,9 +123,13 @@ class WidgetDelegate(QStyledItemDelegate):
                     QPoint(option.rect.width() - (self.i_size.drop_size[0] + self.i_size.drop_margin[0]),
                            option.rect.top() + self.i_size.drop_margin[1]), pm)
 
-        font = QFont('微软雅黑', self.i_size.font_size)
+        font = QFont()
+        font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
+        font.setPointSize(self.i_size.font_size)
         font.setWeight(self.i_size.font_weight)
-        sub_font = QFont('微软雅黑', self.i_size.sub_font_size)
+        sub_font = QFont()
+        sub_font.setFamilies(font.families())
+        sub_font.setPointSize(self.i_size.sub_font_size)
 
         title = index.data().title
         sub_title = index.data().subTitle

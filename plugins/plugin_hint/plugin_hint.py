@@ -1,7 +1,7 @@
 import os
 import re
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo
-from result_model import ResultItem, ResultAction
+from result_model import ResultItem, ResultAction, MenuItem
 
 
 def convertJsTemplate(text):
@@ -17,10 +17,12 @@ class PluginHintPlugin(AbstractPlugin):
 
     def getPluginItem(self, plugin: AbstractPlugin, key):
         action = ResultAction(self.api.change_query, False, key)
-        subTitle = "{}（关键字: [ {} ]）".format(plugin.meta_info.desc, ", ".join(plugin.meta_info.keywords))
-        return ResultItem(self.meta_info, plugin.meta_info.name, subTitle,
+        subTitle = "{}   🔑 {}".format(plugin.meta_info.desc, " • ".join(plugin.meta_info.keywords))
+        item = ResultItem(self.meta_info, plugin.meta_info.name, subTitle,
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
+        item.menus = [MenuItem("打开插件文件夹", ResultAction(os.startfile, True, plugin.meta_info.path))]
+        return item
 
     def query(self, keyword, text, token=None, parent=None):
         results = []

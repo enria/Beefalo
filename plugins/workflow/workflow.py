@@ -54,10 +54,6 @@ class Dialog(QDialog):
         self.setWindowFlag(QtCore.Qt.WindowContextHelpButtonHint, False)
         self.setWindowIcon(QIcon(os.path.join(plugin_info.path, "images/workflow_script.png")))
 
-    def closeEvent(self, event: QtGui.QCloseEvent):
-        event.ignore()
-        self.reject()
-
 
 def run(flow: Workflow, args, plugin_info, api: ContextApi):
     output = ""
@@ -88,7 +84,7 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
         clipboard.setText(output)
     elif flow.output == Source.Result:
         result = ResultItem(plugin_info, flow.name, output, "images/workflow_script.png")
-        result.menus = [MenuItem("复制", ResultAction(clipboard.setText, True, output))]
+        result.menus = [MenuItem("📋 复制", ResultAction(clipboard.setText, True, output))]
         api.change_results([result])
 
 

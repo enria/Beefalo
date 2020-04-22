@@ -1,15 +1,17 @@
 import re, json
+import os
 import requests
 import uuid
 from hashlib import sha256
 from datetime import datetime
-
-from PyQt5.QtCore import QThread, pyqtSignal
+from PyQt5.QtCore import QThread, pyqtSignal, QUrl
+from PyQt5.QtMultimedia import QSound, QMediaPlayer, QMediaContent
 
 from plugin_api import PluginInfo, ContextApi, AbstractPlugin, get_logger
 from result_model import ResultItem, ResultAction
 
 log = get_logger("在线词典")
+
 
 class DictResultItem(ResultItem):
     icons = {"basic": "images/dict_basic.png", "translate": "images/dict_translate.png"}
@@ -20,15 +22,31 @@ class DictResultItem(ResultItem):
         self.action = ResultAction(None, True)
 
 
+sound_url = ""
+
+
+def play_sound(plugin_info, api, url):
+    api.play_media(QMediaContent())
+    global sound_url
+    if url != sound_url:
+        resp = requests.get(url)
+        with open(os.path.join(plugin_info.path, "speech.mp3"), "wb") as sound_file:
+            sound_file.write(resp.content)
+        sound_url = url
+    api.play_media(QMediaContent(QUrl.fromLocalFile(os.path.join(plugin_info.path, "speech.mp3"))))
+    # api.play_media(QUrl(url))
+
+
 class YoudaoApiThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, plugin_info, parent, text, token):
+    def __init__(self, plugin_info, parent, api, text, token):
         super(YoudaoApiThread, self).__init__(parent)
         self.parent = parent
         self.text = text
         self.token = token
         self.plugin_info = plugin_info
+        self.api = api
 
     def run(self):
         t = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
@@ -51,12 +69,16 @@ class YoudaoApiThread(QThread):
                 if apiResp["basic"].get("us-phonetic"):
                     phonetic, wfs = "美[{}]  英[{}]".format(apiResp["basic"].get("us-phonetic"),
                                                           apiResp["basic"].get("uk-phonetic")), ""
+                    item = DictResultItem(self.plugin_info, wfs, phonetic, "basic")
                     if apiResp["basic"].get("wfs"):
                         for wf in apiResp["basic"]["wfs"]:
                             wfs += "{}：{}；".format(wf["wf"]["name"], wf["wf"]["value"])
-                        results.append(DictResultItem(self.plugin_info, wfs, phonetic, "basic"))
+                        item.title, item.subTitle = wfs, phonetic
                     else:
-                        results.append(DictResultItem(self.plugin_info, phonetic, None, "basic"))
+                        item.title, item.subTitle = phonetic, None
+
+                    item.action = ResultAction(play_sound, False, self.plugin_info, self.api, apiResp.get("speakUrl"))
+                    results.append(item)
 
                 if apiResp["basic"].get("explains"):
                     for exp in apiResp["basic"]["explains"]:
@@ -92,6 +114,6 @@ class TranslatePlugin(AbstractPlugin):
             if self.localDict.get(text):
                 for translation in self.localDict[text]:
                     results.append(DictResultItem(self.meta_info, translation, text, "translate"))
-            return results, YoudaoApiThread(self.meta_info, parent, text, token)
+            return results, YoudaoApiThread(self.meta_info, parent, self.api, text, token)
         else:
             return [], None
