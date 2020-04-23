@@ -1,9 +1,10 @@
 import os
 import qrcode
-from flask import Flask, send_file, render_template, make_response
+from flask import Flask, send_file, render_template, make_response, request, redirect
 import threading
 import re
 import hashlib
+from urllib.parse import quote, unquote
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt
@@ -62,8 +63,34 @@ app = Flask(__name__,
             static_folder='templates/assets')
 
 
+class QrCodePlugin(AbstractPlugin, SettingInterface):
+    meta_info = PluginInfo("QR Code", "Generate Qr Code by what you are typing", "images/qrcode_icon.png",
+                           ["qrc"], False)
+
+    def __init__(self, api: ContextApi):
+        SettingInterface.__init__(self)
+        self.api = api
+        self.server = WebServer(self)
+        self.server.start()
+        self.dialog: Dialog = None
+
+    def show_qrcode(self, text):
+        self.dialog = Dialog(text, self.meta_info, self.api)
+        self.dialog.show()
+
+    def query(self, keyword, text, token=None, parent=None):
+        results = []
+        if not text:
+            text = QGuiApplication.clipboard().text()
+        url = self.server.set_text(text)
+        results.append(ResultItem(self.meta_info,
+                                  "Generate QR Code", text, "images/qrcode_icon.png",
+                                  ResultAction(self.show_qrcode, True, url)))
+        return results
+
+
 class WebServer(threading.Thread):
-    def __init__(self):
+    def __init__(self, plugin: QrCodePlugin):
         threading.Thread.__init__(self)
         self.web_file = "README.md"
         self.web_text = "None"
@@ -85,52 +112,35 @@ class WebServer(threading.Thread):
         def print_text():
             return render_template('text.html', text=self.web_text)
 
+        @app.route("/", methods=["GET"])
+        def home():
+            to = request.args.get("to")
+            arg = request.args.get("arg")
+            if plugin.dialog and plugin.dialog.isVisible():
+                plugin.dialog.close()
+            if arg:
+                to += unquote(arg, 'utf-8')
+            return redirect(to)
+
     def run(self):
         app.run(port=self.server_port, host=self.server_host)
 
     def set_text(self, text: str):
-
+        arg = ""
         if re.match(r"^https?://.+", text):
-            return text
-
-        route = ""
-        if text.startswith("file:///"):
-            file_path = re.sub("^file:///", "", text)
-            if os.path.isfile(file_path):
-                md5 = hashlib.md5()
-                md5.update(file_path.encode("utf-8"))
-                self.web_file = file_path
-                route = "file?hash=" + md5.hexdigest()
-
-        if not route:
-            self.web_text = text
-            route = "text"
-
-        return "http://{}:{}/{}".format(self.server_host, self.server_port, route)
-
-
-server = WebServer()
-server.start()
-
-
-class QrCodePlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("QR Code", "Generate Qr Code by what you are typing", "images/qrcode_icon.png",
-                           ["qrc"], False)
-
-    def __init__(self, api: ContextApi):
-        SettingInterface.__init__(self)
-        self.api = api
-
-    def show_qrcode(self, text):
-        dialog = Dialog(text, self.meta_info, self.api)
-        dialog.show()
-
-    def query(self, keyword, text, token=None, parent=None):
-        results = []
-        if not text:
-            text = QGuiApplication.clipboard().text()
-        url = server.set_text(text)
-        results.append(ResultItem(self.meta_info,
-                                  "Generate QR Code", text, "images/qrcode_icon.png",
-                                  ResultAction(self.show_qrcode, True, url)))
-        return results
+            to = text
+        else:
+            route = ""
+            if text.startswith("file:///"):
+                file_path = re.sub("^file:///", "", text)
+                if os.path.isfile(file_path):
+                    md5 = hashlib.md5()
+                    md5.update(file_path.encode("utf-8"))
+                    self.web_file = file_path
+                    arg = "?hash=" + md5.hexdigest()
+                    route = "file"
+            if not route:
+                self.web_text = text
+                route = "text"
+            to = route
+        return "http://{}:{}?to={}&arg={}".format(self.server_host, self.server_port, to, quote(arg, "utf-8"))

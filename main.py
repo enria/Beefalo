@@ -402,16 +402,17 @@ def start_app():
 
     sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
     sys_tray_menu = QMenu()
-    show_action = QAction(u'显示', app)  # 添加一级菜单动作选项(关于程序)
+    show_action = QAction(QIcon("images/radio-fill.png"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
     show_action.triggered.connect(window.change_visible)
-    exit_action = QAction(u'退出', app)  # 添加一级菜单动作选项(退出程序)
+    exit_action = QAction(QIcon("images/exit.png"), u'退出', app)  # 添加一级菜单动作选项(退出程序)
     exit_action.triggered.connect(app.exit)
     sys_tray_menu.addAction(show_action)
     sys_tray_menu.addAction(exit_action)
     sys_tray.setContextMenu(sys_tray_menu)  # 把tpMenu设定为托盘的右键菜单
     sys_tray.show()  # 显示托盘
 
-    sys.exit(app.exec_())
+    code = app.exec_()
+    sys.exit(code)
 
 
 if __name__ == '__main__':
