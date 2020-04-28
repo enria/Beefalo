@@ -1,0 +1,21 @@
+{
+    "desc": "Monokai is a color scheme and customized user interface theme for code editors.",
+    "color": "#ac6218",
+    "background": "#1e1f1c",
+    "editor": {
+            "background": "#414339",
+            "color": "#b6b7b5",
+            "border": "1px solid rgba(0, 0, 0, 0.06)"
+    },
+    "result": {
+        "background": "#1e1f1c",
+        "normal": {
+            "color":"#b6b7b5"
+        },
+        "highlight": {
+            "background": "#414339",
+            "color": "#b6b7b5"
+        },
+        "scroll": "#414339"
+    }
+}

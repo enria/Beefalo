@@ -1,0 +1,21 @@
+{
+    "desc": "Red Theme copied from vscode",
+    "color": "#cc3333",
+    "background": "#300000",
+    "editor": {
+            "background": "#580000",
+            "color": "#cccccc",
+            "border": "2px solid #c84444"
+    },
+    "result": {
+        "background": "#300000",
+        "normal": {
+            "color":"#cccccc"
+        },
+        "highlight": {
+            "background": "#660000",
+            "color": "#cccccc"
+        },
+        "scroll": "#6d3030"
+    }
+}

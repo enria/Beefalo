@@ -11,6 +11,7 @@ from result_model import ResultItem, ResultAction, MenuItem
 
 log = get_logger("Workflow")
 
+
 @unique
 class Source(Enum):
     Arg = "arg"
@@ -46,7 +47,7 @@ class Dialog(QDialog):
             color: %s;
             border: 1px solid rgba(0, 0, 0, 0.06);
             margin:0px;
-        }''' % (theme["background"], theme["highlight"]))
+        }''' % (theme["result"]["highlight"]["background"], theme["result"]["highlight"]["color"]))
         vly = QVBoxLayout()
         vly.addWidget(editor)
         vly.setContentsMargins(0, 0, 0, 0)
@@ -99,9 +100,7 @@ class WorkflowPlugin(AbstractPlugin, SettingInterface):
         SettingInterface.__init__(self)
         self.api = api
         self.flows = []
-
-        for info in self.get_setting("flows"):
-            self.flows.append(Workflow(info["name"], info["script"], Source(info["input"]), Source(info["output"])))
+        self.reload()
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
@@ -119,3 +118,9 @@ class WorkflowPlugin(AbstractPlugin, SettingInterface):
                 action = ResultAction(run, flow.output != Source.Result, flow, flow_arg, self.meta_info, self.api)
                 results.append(ResultItem(self.meta_info, flow.name, flow.script, "images/workflow_script.png", action))
         return results
+
+    def reload(self):
+        SettingInterface.reload(self)
+        self.flows = []
+        for info in self.get_setting("flows"):
+            self.flows.append(Workflow(info["name"], info["script"], Source(info["input"]), Source(info["output"])))

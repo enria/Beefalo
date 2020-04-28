@@ -1,6 +1,7 @@
+import inspect
 import os
 import re
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
 from result_model import ResultItem, ResultAction, MenuItem
 
 
@@ -22,6 +23,8 @@ class PluginHintPlugin(AbstractPlugin):
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
         item.menus = [MenuItem("打开插件文件夹", ResultAction(os.startfile, True, plugin.meta_info.path))]
+        if SettingInterface in inspect.getmro(plugin):
+            item.menus.append(MenuItem("设置插件", ResultAction(self.api.edit_setting, True, plugin)))
         return item
 
     def query(self, keyword, text, token=None, parent=None):

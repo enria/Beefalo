@@ -7,7 +7,7 @@ from logging.handlers import TimedRotatingFileHandler
 
 class ContextApi:
     def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme, change_results,
-                 play_meida):
+                 play_media, setting_plugins):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
@@ -15,7 +15,9 @@ class ContextApi:
         self.main_window = main_window
         self.get_theme = get_theme
         self.change_results = change_results
-        self.play_media = play_meida
+        self.play_media = play_media
+        self.setting_plugins = setting_plugins
+        self.edit_setting = None
 
 
 class PluginInfo(object):
@@ -38,9 +40,10 @@ class AbstractPlugin(object):
 class SettingInterface(object):
     SETTING_FILE = "setting.json"
 
-    def __init__(self):
+    def __init__(self, edit=True):
         self.setting_path = os.path.join(self.meta_info.path, self.SETTING_FILE)
         self.setting = None
+        self.edit = edit
 
     def get_setting(self, key):
         if not self.setting:
@@ -53,6 +56,9 @@ class SettingInterface(object):
         self.setting[key] = value
         with open(self.setting_path, "w", encoding="utf-8") as file:
             file.write(json.dumps(self.setting, ensure_ascii=False, indent=4))
+
+    def reload(self):
+        self.setting = None
 
 
 def get_logger(name) -> logging.Logger:

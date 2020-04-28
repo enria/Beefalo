@@ -2,6 +2,7 @@ import webbrowser
 import requests
 import re
 import json
+from datetime import datetime
 
 from PyQt5.QtGui import QIcon, QPixmap
 from bs4 import BeautifulSoup
@@ -10,7 +11,7 @@ from functools import lru_cache
 from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin, get_logger
 from result_model import ResultItem, ResultAction, MenuItem
 
-log = get_logger("Github")
+log = get_logger("GitHub")
 
 global proxy
 
@@ -23,11 +24,49 @@ def get_icon(url):
     return QIcon(img)
 
 
+def pretty_date(time):
+    """
+    Get a datetime object or a int() Epoch timestamp and return a
+    pretty string like 'an hour ago', 'Yesterday', '3 months ago',
+    'just now', etc
+    """
+    now = datetime.utcnow()
+    diff = now - time
+    second_diff = diff.seconds
+    day_diff = diff.days
+
+    if day_diff < 0:
+        return ''
+
+    if day_diff == 0:
+        if second_diff < 10:
+            return "⌛  " + "just now"
+        if second_diff < 60:
+            return "⌛  " + str(second_diff) + " seconds ago"
+        if second_diff < 120:
+            return "⌛  " + "a minute ago"
+        if second_diff < 3600:
+            return "⌛  " + str(second_diff // 60) + " minutes ago"
+        if second_diff < 7200:
+            return "⌛  " + "an hour ago"
+        if second_diff < 86400:
+            return "⌛  " + str(second_diff // 3600) + " hours ago"
+    if day_diff == 1:
+        return "📅  " + "Yesterday"
+    if day_diff < 7:
+        return "📅  " + str(day_diff) + " days ago"
+    if day_diff < 31:
+        return "📅  " + str(day_diff // 7) + " weeks ago"
+    if day_diff < 365:
+        return "📅  " + str(day_diff // 30) + " months ago"
+    return "📅  " + str(day_diff // 365) + " years ago"
+
+
 class RepositoryItem(ResultItem):
     def __init__(self, plugin_info, repo: dict):
         star = ""
         if "stargazers_count" in repo:
-            star = "★ %s   " % repo["stargazers_count"]
+            star = "⭐ %s   " % repo["stargazers_count"]
         language = ""
         if repo.get("language"):
             language = "✎ %s   " % repo["language"]
@@ -65,17 +104,14 @@ class EventItem(ResultItem):
                          "images/github_icon.png", action)
 
 
-class GithubPlugin(AbstractPlugin, SettingInterface):
+class GitHubPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("Github", "Github tools", "images/github_icon.png", ["ghb"], False)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
-        self.user_name = self.get_setting("user")["name"]
-        self.user_token = "".join(self.get_setting("user")["token"])
-        self.proxy = self.get_setting("proxy")
-        global proxy
-        proxy = self.proxy
+        self.user_name, self.user_token, self.proxy = "", "", {}
+        self.load_setting()
 
     def query(self, keyword, text, token=None, parent=None):
         text = text.strip()
@@ -83,7 +119,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
             self.api.change_results([])
             if text.startswith("all:"):
                 results = self.my_activity()
-            elif text.startswith("recent:"):
+            elif text.startswith("note:"):
                 results = self.recent_activity()
             elif text.startswith("repo:"):
                 results = self.my_repositories()
@@ -97,17 +133,17 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
                                                text,
                                                "images/github_icon.png",
                                                ResultAction(self.search_repository, False, text))
-                results = [search_in_page, search_repository]
+                results = [search_repository, search_in_page]
             return results
         else:
             home = ResultItem(self.meta_info, "Home",
                               "My (%s) GitHub home page" % self.user_name,
                               "images/github_icon.png",
                               ResultAction(webbrowser.open, True, "https://github.com/"))
-            feeds = ResultItem(self.meta_info, "Recent activity",
-                               "My (%s) recent activity" % self.user_name,
-                               "images/github_news.png",
-                               ResultAction(self.api.change_query, False, "{} recent:".format(keyword)))
+            feeds = ResultItem(self.meta_info, "Notifications",
+                               "My (%s) all notifications" % self.user_name,
+                               "images/github_notifations.png",
+                               ResultAction(self.api.change_query, False, "{} note:".format(keyword)))
             events = ResultItem(self.meta_info, "All activity",
                                 "My (%s) all activity" % self.user_name,
                                 "images/github_friends.png",
@@ -141,24 +177,24 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
             log.error(e)
 
     def recent_activity(self):
-        url = "https://github.com/dashboard/recent-activity"
+        icons = {"Issue": "images/github_comment.png",
+                 "RepositoryVulnerabilityAlert": "images/github_alert.png",
+                 "PullRequest": "images/github_pull.png"}
+        url = "https://api.github.com/notifications?all=true"
         try:
-            resp = requests.get(url, headers={"Cookie": self.get_setting("user")["cookie"]}, proxies=self.proxy)
+            resp = requests.get(url, headers={"Authorization": "token " + self.user_token}, proxies=self.proxy)
             if resp.status_code == 200:
-                dom = BeautifulSoup(resp.text, "html.parser")
-                activities = dom.select("li.d-flex")
                 results = []
+                activities = json.loads(resp.text)
                 for activity in activities:
-                    item = ResultItem(self.meta_info, activity.select(".dashboard-break-word a")[0].get_text().strip())
-                    item.subTitle = "💬 {}   {}".format(
-                        activity.select("div.flex-column div.text-gray")[0].get_text().strip(),
-                        re.sub(r"\W{2,}", " ",
-                               activity.select(".dashboard-break-word.lh-condensed.text-gray.f6.mt-1")[
-                                   0].get_text().strip()))
+                    item = ResultItem(self.meta_info, activity["subject"]["title"])
                     item.action = ResultAction(webbrowser.open, True,
-                                               "https://github.com/" + activity.select(".dashboard-break-word a")[
-                                                   0].attrs["href"])
-                    item.icon = "images/github_issue_open.png"
+                                               "https://github.com" + activity["subject"]["url"].replace(
+                                                   "https://api.github.com/repos", ""))
+                    item.icon = icons[activity["subject"]["type"]]
+                    item.subTitle = "{}    {}".format(activity["repository"]["full_name"]
+                                                      , pretty_date(datetime.strptime(activity["updated_at"],
+                                                                                      "%Y-%m-%dT%H:%M:%SZ")))
                     results.append(item)
                 return results
         except BaseException as e:
@@ -169,7 +205,7 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
         url = "https://api.github.com/users/{}/received_events".format(self.user_name)
         try:
             events = []
-            resp = requests.get(url, proxies=self.proxy)
+            resp = requests.get(url, headers={"Authorization": "token " + self.user_token}, proxies=self.proxy)
             if resp.status_code == 200:
                 events = json.loads(resp.text)
             results = []
@@ -221,3 +257,14 @@ class GithubPlugin(AbstractPlugin, SettingInterface):
         except BaseException as e:
             log.error(e)
         return []
+
+    def load_setting(self):
+        self.user_name = self.get_setting("user")["name"]
+        self.user_token = "".join(self.get_setting("user")["token"])
+        self.proxy = self.get_setting("proxy")
+        global proxy
+        proxy = self.proxy
+
+    def reload(self):
+        SettingInterface.reload(self)
+        self.load_setting()

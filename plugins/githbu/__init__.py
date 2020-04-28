@@ -1,1 +1,1 @@
-from github import GithubPlugin
+from github import GitHubPlugin

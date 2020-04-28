@@ -1,7 +1,8 @@
 import os
 
-from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal
+from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal, QRectF
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
+from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate
 
 from result_model import ResultItem
@@ -99,7 +100,20 @@ class ResultListModel(QAbstractListModel):
         self.endRemoveRows()
 
 
-DEFAULT_COLOR = {"color": "#000000", "background": "#4f6180", "highlight": "#000000"}
+DEFAULT_COLOR = {
+    "color": "#ac6218",
+    "result": {
+        "background": "#1e1f1c",
+        "normal": {
+            "color": "#b6b7b5"
+        },
+        "highlight": {
+            "background": "#414339",
+            "color": "#b6b7b5"
+        },
+        "scroll": "#414339"
+    }
+}
 
 
 class WidgetDelegate(QAbstractItemDelegate):
@@ -109,19 +123,29 @@ class WidgetDelegate(QAbstractItemDelegate):
         self.theme = theme
         self.model = model
         self.i_size = i_size
+        self.menu_icon = {}
+
+    def get_menu_icon_data(self, color):
+        if color in self.menu_icon:
+            return self.menu_icon[color]
+        with open("images/down.svg", "r", encoding="UTF-8") as svg:
+            svg_str = svg.read()
+            svg_str = svg_str.replace('#ffffff', color)
+            svg_data = svg_str.encode("utf-8")
+            render = QSvgRenderer(svg_data)
+            self.menu_icon[color] = render
+            return render
 
     def paint(self, painter, option, index):
-
+        theme = self.theme["result"]
         if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
-            background_brush = QBrush(QColor(self.theme["background"]), Qt.SolidPattern)
+            background_brush = QBrush(QColor(theme["highlight"]["background"]), Qt.SolidPattern)
             painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), self.i_size.height), background_brush)
             if len(index.data().menus) and not self.model.select.expand:
-                pm = QPixmap("images/expand_menu.png")
-                pm = pm.scaled(self.i_size.drop_size[0], self.i_size.drop_size[1],
-                               Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
-                painter.drawPixmap(
-                    QPoint(option.rect.width() - (self.i_size.drop_size[0] + self.i_size.drop_margin[0]),
-                           option.rect.top() + self.i_size.drop_margin[1]), pm)
+                render = self.get_menu_icon_data(self.theme["color"])
+                left = option.rect.width() - (self.i_size.drop_size[0] + self.i_size.drop_margin[0])
+                top = option.rect.top() + self.i_size.drop_margin[1]
+                render.render(painter, QRectF(left, top, self.i_size.drop_size[0], self.i_size.drop_size[1]))
 
         font = QFont()
         font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
@@ -153,10 +177,9 @@ class WidgetDelegate(QAbstractItemDelegate):
         sub_title_rect = QRect(self.i_size.height, header_rect.bottom(), header_rect.width(),
                                self.i_size.sub_title_height)
 
-        color = self.theme["color"]
-        if index.data().selected:
-            color = self.theme["highlight"]
-
+        color = theme["normal"]["color"]
+        if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
+            color = theme["highlight"]["color"]
         painter.drawPixmap(
             QPoint(icon_rect.left(), icon_rect.top()),
             icon.pixmap(icon_size.width(), icon_size.height()))
@@ -170,12 +193,14 @@ class WidgetDelegate(QAbstractItemDelegate):
 
         if self.model.select.expand and self.model.select.row == index.row():
             for i in range(len(index.data().menus)):
+                color = theme["normal"]["color"]
                 menu_rect = QRect(self.i_size.height,
                                   option.rect.top() + self.i_size.height + i * self.i_size.menu_height,
                                   option.rect.width() - self.i_size.height, self.i_size.menu_height)
                 if i == self.model.select.selected_menu:
-                    background_brush = QBrush(QColor(self.theme["background"]), Qt.SolidPattern)
+                    background_brush = QBrush(QColor(theme["highlight"]["background"]), Qt.SolidPattern)
                     painter.fillRect(menu_rect, background_brush)
+                    color = theme["highlight"]["color"]
                 painter.setFont(sub_font)
                 painter.setPen(QColor(color))
                 painter.drawText(

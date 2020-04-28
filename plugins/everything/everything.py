@@ -3,6 +3,10 @@ import ctypes
 from ctypes.wintypes import *
 import platform
 import subprocess
+from functools import lru_cache
+from pathlib import Path
+import win32com.client
+import pythoncom
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
@@ -39,15 +43,31 @@ def copy_file(file_name):
     QGuiApplication.clipboard().setMimeData(data)
 
 
+@lru_cache(maxsize=512)
+def get_link_target(link_file):
+    ws = win32com.client.Dispatch("wscript.shell")
+    scut = ws.CreateShortcut(link_file)
+    if scut.TargetPath:
+        return QFileIconProvider().icon(QFileInfo(scut.TargetPath))
+    return os.path.join("images", "icons", file_icons.get("lnk") + ".svg")
+
+
 class FileResultItem(ResultItem):
-    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api, system_icon=False):
+    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api: ContextApi, system_icon=False):
         super().__init__(plugin_info)
         self.title = fileName
         self.subTitle = fullPath
 
         if system_icon:
-            provider = QFileIconProvider()
-            self.icon = provider.icon(QFileInfo(fullPath))
+
+            if fileName.endswith(".url"):
+                self.icon = os.path.join("images", "icons", file_icons.get("url") + ".svg")
+            else:
+                icon_file_path = fullPath
+                if fileName.endswith(".lnk"):
+                    self.icon = get_link_target(fullPath)
+                else:
+                    self.icon = QFileIconProvider().icon(QFileInfo(icon_file_path))
         else:
             if isDir:
                 self.icon = file_icons["folder"]
@@ -60,9 +80,14 @@ class FileResultItem(ResultItem):
                         self.icon = file_icons[ext]
             self.icon = os.path.join("images", "icons", self.icon + ".svg")
         self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
-        self.menus = [
+        self.menus = []
+        if isDir:
+            self.menus.append(MenuItem("🔍 搜索此文件夹",
+                                       ResultAction(api.change_query, False,
+                                                    "{} {}\\ ".format(plugin_info.keywords[0], fullPath))))
+        self.menus += [
             MenuItem("📂 打文件所在位置", ResultAction(to_file_path, True, self.subTitle)),
-            MenuItem("📋 复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
+            MenuItem("📃 复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
             MenuItem("📋 复制文件", ResultAction(copy_file, True, self.subTitle))]
 
 
@@ -70,6 +95,7 @@ class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
     def __init__(self, parent, text, token, api, plugin_info, query_max=50, system_icon=False, root=None):
+        pythoncom.CoInitialize()
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
         self.token = token
@@ -112,7 +138,7 @@ def everything_query(root, text, query_max, plugin_info, api, system_icon):
         path = ctypes.wstring_at(fullPath)
         if system_icon:
             results.append(
-                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, False,
+                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
                                api, True))
         else:
             results.append(
@@ -138,7 +164,7 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
         everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
 
     def query(self, keyword, text, token=None, parent=None):
-        results = []
+        pythoncom.CoInitialize()
         if text.strip():
             if keyword and keyword != "*":
                 return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
@@ -147,4 +173,11 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
             else:
                 return everything_query(self.get_setting("link_root"), text, self.get_setting("everything_query_max"),
                                         self.meta_info, self.api, self.get_setting("system_icon")), None
-        return results, None
+        else:
+            results = []
+            recent_dir = os.path.join(str(Path.home()), "AppData/Roaming/Microsoft/Windows/Recent")
+            paths = sorted(Path(recent_dir).iterdir(), key=os.path.getctime, reverse=True)
+            for item in paths:
+                results.append(FileResultItem(self.meta_info, item.name, str(item), False, self.api,
+                                              self.get_setting("system_icon")))
+            return results, None

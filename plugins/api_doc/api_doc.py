@@ -71,8 +71,17 @@ class APIDocPlugin(AbstractPlugin, SettingInterface):
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
-        documents = self.get_setting("documents")
         self.configs = {}
+        self.load_docs()
+
+    def query(self, keyword, text, token=None, parent=None):
+        if keyword in cache:
+            return build_result(self.meta_info, self.configs[keyword], text), None
+        else:
+            return [], AsyncSuggestThread(self.meta_info, parent, self.configs[keyword], text, token)
+
+    def load_docs(self):
+        documents = self.get_setting("documents")
         keys = []
         for key in documents:
             document = documents[key]
@@ -82,8 +91,8 @@ class APIDocPlugin(AbstractPlugin, SettingInterface):
             keys.append(key)
         self.meta_info.keywords = keys
 
-    def query(self, keyword, text, token=None, parent=None):
-        if keyword in cache:
-            return build_result(self.meta_info, self.configs[keyword], text), None
-        else:
-            return [], AsyncSuggestThread(self.meta_info, parent, self.configs[keyword], text, token)
+    def reload(self):
+        SettingInterface.reload(self)
+        global cache
+        cache = {}
+        self.load_docs()

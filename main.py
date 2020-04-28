@@ -7,11 +7,10 @@ import ctypes
 import re
 import importlib
 import win32con
-from PyQt5 import QtGui
-from PyQt5.QtMultimedia import QSound, QMediaPlayer, QMediaContent
+from PyQt5.QtMultimedia import QMediaPlayer
 from win32process import SuspendThread, ResumeThread
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt, QUrl
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
 from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
@@ -44,6 +43,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_input.installEventFilter(self)
         self.m_size = WindowSize()
         self.delegate = WidgetDelegate(self.result_model, ItemSize())
+        self.theme = {}
         self.instant = False
 
         self.hotKeys = Hotkey(self.get_setting("hotkeys"))
@@ -52,12 +52,12 @@ class BeefaloWidget(QWidget, SettingInterface):
         # load plugins
         self.plugins = {"*": []}
         self.plugin_types = []
+        self.setting_plugins = []
         self.load_plugins()
         self.token = None
         self.player = QMediaPlayer(self)  # 1
 
         self.installEventFilter(self)
-
         self.debounce_thread = DebounceThread(self)
         self.debounce_thread.sinOut.connect(self.async_change_result)
         self.debounce_thread.start()
@@ -72,7 +72,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.player.play()
 
     def load_plugins(self):
-        plugins_dir = "plugins"
+        plugins_dir = self.get_setting("plugins_dir")
         for plugin_dir in os.listdir(plugins_dir):
             if os.path.isdir(os.path.join(plugins_dir, plugin_dir)):
                 # append plugin's folder path
@@ -89,10 +89,12 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         api = ContextApi(self.set_input_text, sys_tray.showMessage,
                          self.change_theme, self.plugin_types, self,
-                         self.get_theme, self.async_change_result, self.play_media)
+                         self.get_theme, self.async_change_result, self.play_media, self.setting_plugins)
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
+            if SettingInterface in inspect.getmro(plugin_type) and plugin.edit:
+                self.setting_plugins.append(plugin)
             # log.info("插件初始化：{}".format(plugin.meta_info.name))
             if len(plugin.meta_info.keywords):
                 for keyword in plugin.meta_info.keywords:
@@ -177,12 +179,13 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.setFixedHeight(actual_height - base_height)
         self.setFixedHeight(actual_height)
 
-    def change_theme(self, mainTheme, highlightItem):
-        self.setStyleSheet(mainTheme)
-        self.delegate.theme = highlightItem
+    def change_theme(self, css, theme):
+        self.setStyleSheet(css)
+        self.theme = theme
+        self.delegate.theme = theme
 
     def get_theme(self):
-        return self.delegate.theme
+        return self.theme
 
     def add_global_hotkey(self):
         self.hotKeys.sinOut.connect(self.change_visible)
@@ -195,10 +198,11 @@ class BeefaloWidget(QWidget, SettingInterface):
         QShortcut(QKeySequence("PgDown"), self, self.selected_page_down)
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
-    def change_visible(self):
+    def change_visible(self, keep=False):
         if self.isVisible():
             self.setVisible(False)
-            self.clear_input_result()
+            if not keep:
+                self.clear_input_result()
         else:
             self.activateWindow()
             self.ws_input.setFocus()
@@ -242,8 +246,11 @@ class BeefaloWidget(QWidget, SettingInterface):
         if self.result_model.rowCount() == 0:
             return
         select = self.result_model.select
-        if select.expand and select.selected_menu < len(self.result_model.selected_item().menus) - 1:
-            self.result_model.select.selected_menu += 1
+        if select.expand:
+            if select.selected_menu < len(self.result_model.selected_item().menus) - 1:
+                self.result_model.select.selected_menu += 1
+            else:
+                self.result_model.select.selected_menu = -1
             self.repaint_selected_item()
         else:
             self.handle_result_selected(self.result_model.create_index(1))
@@ -296,7 +303,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
-            self.change_visible()
+            self.change_visible(False)
             return True  # returning  True means not to pass to other widget's
         if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
             if self.result_model.select.valid() and len(self.result_model.selected_item().menus):
@@ -319,7 +326,7 @@ class DebounceThread(QThread):
     sinOut = pyqtSignal([list])
 
     def __init__(self, view: 'BeefaloWidget'):
-        super(DebounceThread, self).__init__(view.thread())
+        super(DebounceThread, self).__init__(view)
         self.view = view
         self.work = False
         self.pause = True
@@ -345,7 +352,7 @@ class DebounceThread(QThread):
                 query = self.view.ws_input.text()
                 self.view.token = str(uuid.uuid1())
                 if len(query.strip()):
-                    pluginMath = re.match(r"(\w+)(\s*)(.*)", query)
+                    pluginMath = re.match(r"([^\s]+)(\s*)(.*)", query)
                     matched_plugins = []
                     if pluginMath:
                         groups = pluginMath.groups()

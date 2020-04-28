@@ -28,7 +28,7 @@ class Command(object):
         self.icon = icon
 
 
-class SystemCmdPlugin(AbstractPlugin, SettingInterface):
+class SystemCmdPlugin(AbstractPlugin):
     cmds = {
         "lock": Command("锁屏", "系统锁屏", lock, "images/system_cmd_lock.png"),
         "sleep": Command("睡眠", "系统睡眠", sleep, "images/system_cmd_sleep.png"),

@@ -75,7 +75,7 @@
     },
     "dict": {
       "name": "海词",
-      "icon": "images/web_search_dict.png",
+      "icon": "images/web_search_d.png",
       "query": "http://dict.cn/{text}",
       "home": "http://dict.cn",
       "suggestion": "None"

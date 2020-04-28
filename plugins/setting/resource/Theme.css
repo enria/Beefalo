@@ -1,0 +1,71 @@
+QScrollBar::handle:vertical
+{{
+    width:9px;
+    background:{sb};
+    min-height:10px;
+}}
+QScrollBar:vertical{{width:9px;background:rgba(0,0,0,0%);margin:0;padding-top:0px;padding-bottom:0px;}}
+QScrollBar::add-line:vertical{{height:0px;width:0px;}}
+QScrollBar::sub-line:vertical{{height:0px;width:0px;}}
+QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{{background:rgba(0,0,0,0%);}}
+
+#TitleList{{
+    background-color:{tbc};
+    border:none;
+    padding-left:10px;
+    padding-top:10px;
+}}
+#TitleList::item{{
+    border:none;
+    background-color:transparent;
+}}
+
+#TitleList::item:selected,
+#TitleList::item:hover{{
+    border:none;
+    background-color:{thbc}
+}}
+
+#TitleList::item #Name{{
+    color:{tc}
+}}
+
+#TitleList::item>#Name:selected{{
+    color:{thc}
+}}
+
+#EditorList{{
+    background-color:{ebc};
+    border:none;
+}}
+#EditorList::item,
+#EditorList::item:selected,
+#EditorList::item:hover {{
+    background-color:{ebc}
+}}
+
+#EditorList::item #Title{{
+    color:{tc}
+}}
+
+#EditorList::item #Editor{{
+    background-color:{eibc};
+    color:{eic};
+    border:{eibd};
+}}
+
+#EditorList::item #SaveButton{{
+    background-color:{btbc};
+    color:{eic};
+    border:{eibd};
+    padding-left:20px;
+    padding-right:20px;
+}}
+
+#EditorList::item #ResetButton{{
+    background-color:{eibc};
+    color:{eic};
+    border:{eibd};
+    padding-left:20px;
+    padding-right:20px;
+}}

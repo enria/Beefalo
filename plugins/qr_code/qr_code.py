@@ -1,17 +1,15 @@
 import os
 import qrcode
-from flask import Flask, send_file, render_template, make_response, request, redirect
-import threading
 import re
 import hashlib
 from urllib.parse import quote, unquote
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt
+from PyQt5.QtCore import Qt, QThread
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication, QPixmap
-from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QDesktopWidget, QLabel
+from PyQt5.QtWidgets import QDialog, QVBoxLayout, QDesktopWidget, QLabel
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger
-from result_model import ResultItem, ResultAction, MenuItem
+from result_model import ResultItem, ResultAction
 
 log = get_logger("Qr Code")
 
@@ -45,6 +43,7 @@ class Dialog(QDialog):
             w_code_img.setPixmap(img)
             vly.addWidget(w_code_img)
         except BaseException as e:
+            log.error(e)
             w_code_text = QLabel(self)
             w_code_text.setText("The text is too long!")
             w_code_text.setFont(QFont('微软雅黑', 12))
@@ -56,13 +55,6 @@ class Dialog(QDialog):
         self.setWindowIcon(QIcon(os.path.join(plugin_info.path, "images/qrcode_icon.png")))
 
 
-clipboard = QGuiApplication.clipboard()
-
-app = Flask(__name__,
-            static_url_path='/assets',
-            static_folder='templates/assets')
-
-
 class QrCodePlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("QR Code", "Generate Qr Code by what you are typing", "images/qrcode_icon.png",
                            ["qrc"], False)
@@ -70,8 +62,7 @@ class QrCodePlugin(AbstractPlugin, SettingInterface):
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
-        self.server = WebServer(self)
-        self.server.start()
+        self.server = None
         self.dialog: Dialog = None
 
     def show_qrcode(self, text):
@@ -79,6 +70,9 @@ class QrCodePlugin(AbstractPlugin, SettingInterface):
         self.dialog.show()
 
     def query(self, keyword, text, token=None, parent=None):
+        if not self.server:
+            self.server = WebServer(self, self.api.main_window)
+            self.server.start()
         results = []
         if not text:
             text = QGuiApplication.clipboard().text()
@@ -88,16 +82,28 @@ class QrCodePlugin(AbstractPlugin, SettingInterface):
                                   ResultAction(self.show_qrcode, True, url)))
         return results
 
+    def reload(self):
+        SettingInterface.reload(self)
+        if self.server:
+            self.server.terminate()
+            self.server = WebServer(self, self.api.main_window)
+            self.server.start()
 
-class WebServer(threading.Thread):
-    def __init__(self, plugin: QrCodePlugin):
-        threading.Thread.__init__(self)
+
+class WebServer(QThread):
+    def __init__(self, plugin: QrCodePlugin, parent):
+        from flask import Flask, send_file, render_template, make_response, request, redirect
+        super(WebServer, self).__init__(parent)
         self.web_file = "README.md"
         self.web_text = "None"
-        self.server_host = "192.168.43.153"
-        self.server_port = 21345
+        self.server_host = plugin.get_setting("server")["host"]
+        self.server_port = plugin.get_setting("server")["port"]
 
-        @app.route('/file')
+        self.app = Flask(__name__,
+                         static_url_path='/assets',
+                         static_folder='templates/assets')
+
+        @self.app.route('/file')
         def download_file():
             if self.web_file:
                 file_name = os.path.basename(self.web_file)
@@ -108,11 +114,11 @@ class WebServer(threading.Thread):
             else:
                 return "File not found"
 
-        @app.route('/text')
+        @self.app.route('/text')
         def print_text():
             return render_template('text.html', text=self.web_text)
 
-        @app.route("/", methods=["GET"])
+        @self.app.route("/", methods=["GET"])
         def home():
             to = request.args.get("to")
             arg = request.args.get("arg")
@@ -123,7 +129,7 @@ class WebServer(threading.Thread):
             return redirect(to)
 
     def run(self):
-        app.run(port=self.server_port, host=self.server_host)
+        self.app.run(port=self.server_port, host=self.server_host)
 
     def set_text(self, text: str):
         arg = ""

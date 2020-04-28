@@ -1,0 +1,20 @@
+{
+    "color": "#80cbc4",
+    "background": "#263238",
+    "editor": {
+            "background": "#303c41",
+            "color": "#eeffff",
+            "border": "1px solid rgba(0, 0, 0, 0.06)"
+    },
+    "result": {
+        "background": "#263238",
+        "normal": {
+            "color":"#9cc0c3"
+        },
+        "highlight": {
+            "background": "#404d52",
+            "color": "#eeffff"
+        },
+        "scroll": "#404d52"
+    }
+}

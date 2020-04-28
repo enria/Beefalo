@@ -98,7 +98,7 @@ class ZhihuSuggestion(SearchSuggestion):
             resp = requests.get(self.url, {"q": text}, headers={"User-Agent": "PostmanRuntime/7.24.0"})
             if resp.status_code == 200:
                 json_data = json.loads(resp.text)
-                return [SearchItem(text) for text in json_data["suggest"]]
+                return [SearchItem(text["query"]) for text in json_data["suggest"]]
         except BaseException as e:
             log.error(e)
         return []
@@ -170,25 +170,9 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
         self.api = api
-        self.engines = self.get_setting("engines")
-        keys = ["*"]
-        for key in self.engines:
-            info = self.engines[key]
-            engine = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
-                                  info.get("suggestion"))
-            if "direct" in info:
-                engine.direct = info["direct"]
-            self.engines[key] = engine
-            keys.append(key)
-        self.meta_info.keywords = keys
-        self.default_engine = self.get_setting("default")["engine"]
-
-        self.suggestions = {"Google": GoogleSuggestion(self.get_setting("proxy")),
-                            "Baidu": BaiduSuggestion(),
-                            "Bilibili": BilibiliSuggestion(),
-                            "知乎": ZhihuSuggestion(),
-                            "Wikipedia": WikiSuggestion(self.get_setting("proxy"))}
-        self.default_suggest = self.get_setting("default")["suggestion"]
+        self.engines, self.default_engine = {}, ""
+        self.suggestions, self.default_suggest = {}, ""
+        self.load_engines()
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
@@ -206,3 +190,29 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
             return results, AsyncSuggestThread(self.meta_info, parent, suggest, engine, text, token)
         else:
             return results, None
+
+    def load_engines(self):
+        engines = self.get_setting("engines")
+        keys = ["*"]
+        self.engines = {}
+        for key in engines:
+            info = engines[key]
+            engine = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
+                                  info.get("suggestion"))
+            if "direct" in info:
+                engine.direct = info["direct"]
+            self.engines[key] = engine
+            keys.append(key)
+        self.meta_info.keywords = keys
+        self.default_engine = self.get_setting("default")["engine"]
+
+        self.suggestions = {"Google": GoogleSuggestion(self.get_setting("proxy")),
+                            "Baidu": BaiduSuggestion(),
+                            "Bilibili": BilibiliSuggestion(),
+                            "知乎": ZhihuSuggestion(),
+                            "Wikipedia": WikiSuggestion(self.get_setting("proxy"))}
+        self.default_suggest = self.get_setting("default")["suggestion"]
+
+    def reload(self):
+        SettingInterface.reload(self)
+        self.load_engines()

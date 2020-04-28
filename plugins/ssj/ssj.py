@@ -20,7 +20,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
-        open_setting_action = ResultAction(os.startfile, False, self.setting_path)
+        open_setting_action = ResultAction(self.api.edit_setting, False, SSJPlugin)
         if self.doc_root is None or len(self.doc_root.strip()) == 0:
             return [
                 ResultItem(self.meta_info, "请先设置文档目录，再使用插件", "点击进入设置界面", "images/ssj_error.png", open_setting_action)]
@@ -41,6 +41,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
         if doc_search:
             doc_search = doc_search.lower()
             for doc in os.listdir(self.doc_root):
+                doc = doc.lower()
                 if doc.endswith(".md") and not os.path.isdir(doc) and str(doc[0:-3]).find(doc_search) > -1:
                     doc_matchs.append(doc)
                     if doc == doc_search + ".md":
@@ -49,6 +50,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             for doc in os.listdir(self.doc_root):
                 if doc.endswith(".md") and not os.path.isdir(doc):
                     doc_matchs.append(doc)
+
         if not tip.strip():
             if total_match:
                 for doc in doc_matchs:
@@ -130,3 +132,7 @@ class SSJPlugin(AbstractPlugin, SettingInterface):
             file.write("\n\n".join(new_lines))
 
         self.api.change_query("{} {}:".format(self.meta_info.keywords[0], str(doc[:-3])))
+
+    def reload(self):
+        SettingInterface.reload(self)
+        self.doc_root = self.get_setting("doc_root")
