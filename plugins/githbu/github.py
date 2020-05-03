@@ -96,6 +96,10 @@ class EventItem(ResultItem):
         if event["type"] == "IssueCommentEvent":
             desc = "{} comment \"{}\"".format(event["actor"]["display_login"],
                                               event["payload"]["issue"]["body"])
+        if event["type"] == "ForkEvent":
+            desc = "{} forked {}".format(event["actor"]["display_login"],
+                                         event["repo"]["name"])
+
         if event["type"].startswith("Issue"):
             action = ResultAction(webbrowser.open, True, event["payload"]["issue"]["html_url"])
         else:

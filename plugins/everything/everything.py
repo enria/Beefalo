@@ -180,6 +180,8 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
             results = []
             recent_dir = os.path.join(str(Path.home()), "AppData/Roaming/Microsoft/Windows/Recent")
             paths = sorted(Path(recent_dir).iterdir(), key=os.path.getctime, reverse=True)
+            if self.get_setting("everything_query_max"):
+                paths = paths[:self.get_setting("everything_query_max")]
             for item in paths:
                 results.append(FileResultItem(self.meta_info, item.name, str(item), False, self.api,
                                               self.get_setting("system_icon")))

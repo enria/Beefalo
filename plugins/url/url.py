@@ -31,7 +31,7 @@ class URLPlugin(AbstractPlugin):
 
     def generate(self, text):
         short_url = shorten_url(text)
-        item = ResultItem(self.meta_info, short_url, "点击复制", "images/url_send.png",
+        item = ResultItem(self.meta_info, short_url, "点击复制", "images/url_copy.png",
                           ResultAction(QGuiApplication.clipboard().setText, True, short_url))
         item.menus = [MenuItem(" 在浏览器中打开", ResultAction(openBrowser, True, short_url))]
         self.api.change_results([item])
