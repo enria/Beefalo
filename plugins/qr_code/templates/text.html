@@ -30,6 +30,7 @@
             <div style="margin-bottom: 5px;display: flex;justify-content: flex-end;">
                 <h4 style="flex-grow: 1;">文本内容</h4>
                 <form class="form-inline">
+                    <button id="btn-upload" type="button"  class="btn btn-primary" style="margin-right: 5px;">上传</button>
                     <button id="btn-copy" data-placement="bottom" type="button" data-content="已复制"
                     data-clipboard-target="#text" class="btn btn-success" style="margin-right: 5px;">复制</button>
                 </form>
@@ -40,6 +41,20 @@
 </body>
 <script>
     new ClipboardJS('#btn-copy');
+    function upload(text) {
+        var params='text=' + encodeURIComponent(text)
+        var xhr = new XMLHttpRequest();
+        xhr.open('POST', "text");
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState>3 && xhr.status==200) { console.log(xhr.status)}
+        };
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        xhr.send(params);
+    }
+    document.getElementById("btn-upload").onmousedown=function(){
+        upload(document.getElementById("text").value)
+    }
 </script>
 
 </html>

@@ -1,0 +1,14 @@
+{
+  "zh": {
+    "plugin_name": "搜索引擎",
+    "plugin_desc": "使用默认浏览器搜索关键词",
+    "to_input": "上屏",
+    "search": "搜索"
+  },
+  "en": {
+    "plugin_name": "Search Engine",
+    "plugin_desc": "Use the default browser to search keywords",
+    "to_input": "Bring this option to input box",
+    "search": "Search"
+  }
+}

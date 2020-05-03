@@ -88,8 +88,9 @@ class BeefaloWidget(QWidget, SettingInterface):
                         pass
 
         api = ContextApi(self.set_input_text, sys_tray.showMessage,
-                         self.change_theme, self.plugin_types, self,
-                         self.get_theme, self.async_change_result, self.play_media, self.setting_plugins)
+                         self.change_theme, self.plugin_types,
+                         self.get_theme, self.async_change_result, self.change_selected_result, self.play_media,
+                         self.setting_plugins, self.get_setting("language"))
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(api)
@@ -217,8 +218,10 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.handle_text_changed()
         else:
             self.ws_input.setText(text)
-        self.activateWindow()
+
         self.setVisible(True)
+        self.ws_input.activateWindow()
+        self.ws_input.setFocus()
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -232,6 +235,12 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.instant = False
         if self.result_model.select.row > -1:  # selected row may has been changed
             self.ws_listview.scrollTo(self.result_model.create_index())
+
+    def change_selected_result(self, result):
+        if self.result_model.select.valid():
+            self.result_model.listItemData[self.result_model.select.row] = result
+            self.result_model.select.selected_menu = -1
+            self.repaint_selected_item()
 
     def selected_up(self):
         if self.result_model.rowCount() == 0:

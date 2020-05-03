@@ -1,0 +1,1 @@
+from tips import TipsPlugin

@@ -1,0 +1,10 @@
+{
+  "zh": {
+    "plugin_name": "主题",
+    "plugin_desc": "修改主题"
+  },
+  "en": {
+    "plugin_name": "Theme",
+    "plugin_desc": "Change theme"
+  }
+}

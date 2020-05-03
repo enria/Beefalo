@@ -1,7 +1,7 @@
 import os
 import json
 
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
 from result_model import ResultItem, ResultAction
 
 
@@ -12,12 +12,12 @@ class Theme(object):
         self.file = file
 
 
-class ThemePlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("主题", "更改主题", "images/theme_icon.png",
-                           ["theme"], False)
+class ThemePlugin(AbstractPlugin, SettingInterface, I18nInterface):
+    meta_info = PluginInfo(icon="images/theme_icon.png", keywords=["theme"], async_result=False)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self, False)
+        I18nInterface.__init__(self, api.language)
         self.api = api
         self.themes = {}
         for theme in os.listdir(os.path.join(self.meta_info.path, "resource")):

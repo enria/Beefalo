@@ -55,7 +55,10 @@ def get_link_target(link_file):
 class FileResultItem(ResultItem):
     def __init__(self, plugin_info, fileName: str, fullPath, isDir, api: ContextApi, system_icon=False):
         super().__init__(plugin_info)
-        self.title = fileName
+        if fileName.endswith(".lnk"):
+            self.title = str(fileName[:-4])
+        else:
+            self.title = fileName
         self.subTitle = fullPath
 
         if system_icon:
@@ -164,7 +167,7 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
         everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
 
     def query(self, keyword, text, token=None, parent=None):
-        pythoncom.CoInitialize()
+        pythoncom.CoInitialize()  # wscript.shell
         if text.strip():
             if keyword and keyword != "*":
                 return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,

@@ -5,7 +5,7 @@ import hashlib
 from urllib.parse import quote, unquote
 
 from PyQt5 import QtCore
-from PyQt5.QtCore import Qt, QThread
+from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication, QPixmap
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QDesktopWidget, QLabel
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger
@@ -16,7 +16,7 @@ log = get_logger("Qr Code")
 
 class Dialog(QDialog):
     def __init__(self, text, plugin_info: PluginInfo, api: ContextApi):
-        super(QDialog, self).__init__(api.main_window)
+        super(QDialog, self).__init__()
         theme = api.get_theme()
         self.setWindowTitle("QR Code ")
         self.resize(300, 300)
@@ -64,41 +64,60 @@ class QrCodePlugin(AbstractPlugin, SettingInterface):
         self.api = api
         self.server = None
         self.dialog: Dialog = None
+        self.build_server()
 
     def show_qrcode(self, text):
         self.dialog = Dialog(text, self.meta_info, self.api)
         self.dialog.show()
 
+    def copy_uploaded_text(self):
+        QGuiApplication.clipboard().setText(self.server.uploaded_text)
+        self.server.uploaded_text = ""
+
     def query(self, keyword, text, token=None, parent=None):
-        if not self.server:
-            self.server = WebServer(self, self.api.main_window)
-            self.server.start()
         results = []
         if not text:
             text = QGuiApplication.clipboard().text()
+            if self.server.uploaded_text:
+                copy_item = ResultItem(self.meta_info,
+                                       "Copy the uploaded text",
+                                       self.server.uploaded_text,
+                                       "images/qrcode_copy.png",
+                                       ResultAction(self.copy_uploaded_text, True))
+                results.append(copy_item)
         url = self.server.set_text(text)
         results.append(ResultItem(self.meta_info,
                                   "Generate QR Code", text, "images/qrcode_icon.png",
                                   ResultAction(self.show_qrcode, True, url)))
         return results
 
+    def build_server(self):
+        self.server = WebServer(self)
+        self.server.query_sin_out.connect(self.api.change_query)
+        self.server.start()
+
     def reload(self):
         SettingInterface.reload(self)
         if self.server:
             self.server.terminate()
-            self.server = WebServer(self, self.api.main_window)
-            self.server.start()
+            self.build_server()
 
 
 class WebServer(QThread):
-    def __init__(self, plugin: QrCodePlugin, parent):
-        from flask import Flask, send_file, render_template, make_response, request, redirect
-        super(WebServer, self).__init__(parent)
+    query_sin_out = pyqtSignal([str])
+
+    def __init__(self, plugin: QrCodePlugin):
+        super(WebServer, self).__init__()
+        self.plugin = plugin
         self.web_file = "README.md"
         self.web_text = "None"
-        self.server_host = plugin.get_setting("server")["host"]
-        self.server_port = plugin.get_setting("server")["port"]
+        self.server_host = self.plugin.get_setting("server")["host"]
+        self.server_port = self.plugin.get_setting("server")["port"]
+        self.uploaded_text = ""
+        self.app = None
 
+    def run(self):
+        from flask import Flask, send_file, render_template, make_response, request, redirect
         self.app = Flask(__name__,
                          static_url_path='/assets',
                          static_folder='templates/assets')
@@ -114,22 +133,34 @@ class WebServer(QThread):
             else:
                 return "File not found"
 
-        @self.app.route('/text')
+        @self.app.route('/text', methods=['GET', 'POST'])
         def print_text():
-            return render_template('text.html', text=self.web_text)
+            if request.method == 'GET':
+                return render_template('text.html', text=self.web_text)
+            if request.method == "POST":
+                data = request.form
+                if data.get("text"):
+                    self.uploaded_text = data.get("text")
+                    self.query_sin_out.emit("{} ".format(self.plugin.meta_info.keywords[0]))
+            return {"status": 200, "msg": "success"}
 
         @self.app.route("/", methods=["GET"])
         def home():
             to = request.args.get("to")
+            if not to:
+                return "Hello Beefalo QR Code plugin"
+            to = unquote(to, 'utf-8')
             arg = request.args.get("arg")
-            if plugin.dialog and plugin.dialog.isVisible():
-                plugin.dialog.close()
+            if self.plugin.dialog and self.plugin.dialog.isVisible():
+                self.plugin.dialog.close()
             if arg:
                 to += unquote(arg, 'utf-8')
             return redirect(to)
 
-    def run(self):
-        self.app.run(port=self.server_port, host=self.server_host)
+        try:
+            self.app.run(port=self.server_port, host=self.server_host)
+        except:
+            log.error("Qr code server starting failed")
 
     def set_text(self, text: str):
         arg = ""
@@ -149,4 +180,4 @@ class WebServer(QThread):
                 self.web_text = text
                 route = "text"
             to = route
-        return "http://{}:{}?to={}&arg={}".format(self.server_host, self.server_port, to, quote(arg, "utf-8"))
+        return "http://{}:{}?to={}&arg={}".format(self.server_host, self.server_port, quote(to), quote(arg, "utf-8"))

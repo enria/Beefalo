@@ -1,0 +1,16 @@
+{
+  "zh": {
+    "plugin_name": "Todo",
+    "plugin_desc": "Todo列表",
+    "copy": "复制",
+    "delete": "删除",
+    "add": "新增Todo"
+  },
+  "en": {
+    "plugin_name": "Todo",
+    "plugin_desc": "Todo list",
+    "copy": "Copy",
+    "delete": "Delete",
+    "add": "Add todo"
+  }
+}

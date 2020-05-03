@@ -6,18 +6,19 @@ from logging.handlers import TimedRotatingFileHandler
 
 
 class ContextApi:
-    def __init__(self, change_query, show_message, change_theme, plugin_types, main_window, get_theme, change_results,
-                 play_media, setting_plugins):
+    def __init__(self, change_query, show_message, change_theme, plugin_types,
+                 get_theme, change_results, change_selected_result, play_media, setting_plugins, language):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
         self.plugin_types = plugin_types
-        self.main_window = main_window
         self.get_theme = get_theme
         self.change_results = change_results
+        self.change_selected_result = change_selected_result
         self.play_media = play_media
         self.setting_plugins = setting_plugins
         self.edit_setting = None
+        self.language = language
 
 
 class PluginInfo(object):
@@ -59,6 +60,27 @@ class SettingInterface(object):
 
     def reload(self):
         self.setting = None
+
+
+class I18nInterface(object):
+    LANGUAGE_FILE = "i18n.json"
+
+    def __init__(self, language, init_meta_info=True):
+        self.language_file_path = os.path.join(self.meta_info.path, self.LANGUAGE_FILE)
+        self.language_dict = None
+        self.language = language
+        if init_meta_info:
+            self.meta_info.name = self.i18n_text("plugin_name")
+            self.meta_info.desc = self.i18n_text("plugin_desc")
+
+    def i18n_text(self, key):
+        if not self.language_dict:
+            all_language_data = json.load(open(self.language_file_path, encoding="utf-8"))
+            if self.language in all_language_data:
+                self.language_dict = all_language_data[self.language]
+            else:
+                self.language_dict = next(iter(all_language_data.values()))
+        return self.language_dict.get(key)
 
 
 def get_logger(name) -> logging.Logger:

@@ -30,7 +30,7 @@ class Workflow(object):
 
 class Dialog(QDialog):
     def __init__(self, title, text, plugin_info: PluginInfo, api: ContextApi):
-        super(QDialog, self).__init__(api.main_window)
+        super(QDialog, self).__init__()
         theme = api.get_theme()
         self.setWindowTitle("Beefalo Workflow: " + title)
         self.resize(600, 400)

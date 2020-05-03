@@ -1,1 +1,0 @@
-from ssj import SSJPlugin

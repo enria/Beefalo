@@ -66,7 +66,7 @@ class RepositoryItem(ResultItem):
     def __init__(self, plugin_info, repo: dict):
         star = ""
         if "stargazers_count" in repo:
-            star = "⭐ %s   " % repo["stargazers_count"]
+            star = "★ %s   " % repo["stargazers_count"]
         language = ""
         if repo.get("language"):
             language = "✎ %s   " % repo["language"]
@@ -105,7 +105,7 @@ class EventItem(ResultItem):
 
 
 class GitHubPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("Github", "Github tools", "images/github_icon.png", ["ghb"], False)
+    meta_info = PluginInfo("GitHub", "GitHub tools", "images/github_icon.png", ["ghb"], False)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)

@@ -86,6 +86,12 @@
       "query": "https://emojipedia.org/search/?q={text}",
       "home": "https://emojipedia.org",
       "suggestion": "None"
+    },
+    "douban": {
+      "name": "豆瓣",
+      "icon": "images/web_search_douban.png",
+      "query": "https://www.douban.com/search?q={text}",
+      "home": "https://www.douban.com"
     }
   }
 }

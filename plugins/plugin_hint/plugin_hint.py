@@ -1,7 +1,7 @@
 import inspect
 import os
 import re
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
 from result_model import ResultItem, ResultAction, MenuItem
 
 
@@ -9,11 +9,11 @@ def convertJsTemplate(text):
     return re.sub(r"([\\`$])", r"\\\1", text)
 
 
-class PluginHintPlugin(AbstractPlugin):
-    meta_info = PluginInfo("插件提示", "补全插件关键字", "images/plugin_hint_icon.png",
-                           ["pl", "*"], False)
+class PluginHintPlugin(AbstractPlugin, I18nInterface):
+    meta_info = PluginInfo(icon="images/plugin_hint_icon.png", keywords=["pl", "*"], async_result=False)
 
     def __init__(self, api: ContextApi):
+        I18nInterface.__init__(self, api.language)
         self.api = api
 
     def getPluginItem(self, plugin: AbstractPlugin, key):
@@ -22,9 +22,9 @@ class PluginHintPlugin(AbstractPlugin):
         item = ResultItem(self.meta_info, plugin.meta_info.name, subTitle,
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
-        item.menus = [MenuItem("打开插件文件夹", ResultAction(os.startfile, True, plugin.meta_info.path))]
+        item.menus = [MenuItem("📂 {}".format(self.i18n_text("open_dir")), ResultAction(os.startfile, True, plugin.meta_info.path))]
         if SettingInterface in inspect.getmro(plugin):
-            item.menus.append(MenuItem("设置插件", ResultAction(self.api.edit_setting, True, plugin)))
+            item.menus.append(MenuItem("🛠️ {}".format(self.i18n_text("setting")), ResultAction(self.api.edit_setting, True, plugin)))
         return item
 
     def query(self, keyword, text, token=None, parent=None):

@@ -1,0 +1,14 @@
+{
+  "zh": {
+    "plugin_name": "插件提示",
+    "plugin_desc": "补全插件关键字",
+    "open_dir": "打开插件文件夹",
+    "setting": "设置插件"
+  },
+  "en": {
+    "plugin_name": "Plugin Hint",
+    "plugin_desc": "Complete plugins keywords",
+    "open_dir": "Open plugin's directory",
+    "setting": "Plugin's preference"
+  }
+}

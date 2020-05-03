@@ -2,15 +2,14 @@ import webbrowser
 import requests
 import re
 import json
-from bs4 import BeautifulSoup
 
 from lxml import etree
 from PyQt5.QtCore import QThread, pyqtSignal
 
-from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin, get_logger
-from result_model import ResultItem, ResultAction
+from plugin_api import PluginInfo, ContextApi, SettingInterface, AbstractPlugin, get_logger, I18nInterface
+from result_model import ResultItem, ResultAction, MenuItem
 
-log = get_logger("搜索引擎")
+global log
 
 
 class SearchEngine:
@@ -126,12 +125,12 @@ class WikiSuggestion(SearchSuggestion):
 
 
 class WebSearchResultItem(ResultItem):
-    def __init__(self, plugin_info, engine: SearchEngine, item: SearchItem):
+    def __init__(self, plugin_info, i18n: I18nInterface, engine: SearchEngine, item: SearchItem):
         super().__init__(plugin_info)
         if item.text:
             self.url = engine.url.format(text=item.query)
             self.title = item.text
-            self.subTitle = item.sub_title if item.sub_title else "搜索 " + engine.name
+            self.subTitle = item.sub_title if item.sub_title else "{} {}".format(i18n.i18n_text("search"), engine.name)
         else:
             self.url = engine.home
             self.title = engine.name
@@ -147,28 +146,44 @@ class WebSearchResultItem(ResultItem):
 class AsyncSuggestThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, plugin_info, parent, suggestion: SearchSuggestion, engine: SearchEngine, text, token):
+    def __init__(self, plugin_info, i18n: I18nInterface, api: ContextApi, key, parent, suggestion: SearchSuggestion,
+                 engine: SearchEngine,
+                 text, token):
         super(AsyncSuggestThread, self).__init__(parent)
         self.plugin_info = plugin_info
+        self.i18n = i18n
         self.parent = parent
         self.suggestion = suggestion
         self.text = text
         self.engine = engine
         self.token = token
+        self.api = api
+        self.key = key
 
     def run(self):
         items = self.suggestion.suggest(self.text)
         results = []
         for item in items:
-            results.append(WebSearchResultItem(self.plugin_info, self.engine, item))
+            result_item = WebSearchResultItem(self.plugin_info, self.i18n, self.engine, item)
+            if self.key == "*":
+                to_query = "{} ".format(item.text)
+
+            else:
+                to_query = "{} {} ".format(self.key, item.text)
+            result_item.menus = [MenuItem("🔍 {}".format(self.i18n.i18n_text("to_input")),
+                                          ResultAction(self.api.change_query, False, to_query))]
+            results.append(result_item)
         self.sinOut.emit(self.token, results)
 
 
-class WebSearchPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("搜索引擎", "使用默认浏览器搜索关键词", "images/web_search_icon.png", [], True)
+class WebSearchPlugin(AbstractPlugin, SettingInterface, I18nInterface):
+    meta_info = PluginInfo(icon="images/web_search_icon.png", keywords=[], async_result=True)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
+        I18nInterface.__init__(self, api.language)
+        global log
+        log = get_logger(self.meta_info.name)
         self.api = api
         self.engines, self.default_engine = {}, ""
         self.suggestions, self.default_suggest = {}, ""
@@ -181,13 +196,14 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface):
         else:
             engine = self.engines[self.default_engine]
         if engine.direct:
-            results.append(WebSearchResultItem(self.meta_info, engine, SearchItem(text)))
+            results.append(WebSearchResultItem(self.meta_info, self, engine, SearchItem(text)))
         if engine.suggestion:
             suggest = self.suggestions.get(engine.suggestion)
         else:
             suggest = self.suggestions.get(self.default_suggest)
         if suggest:
-            return results, AsyncSuggestThread(self.meta_info, parent, suggest, engine, text, token)
+            return results, AsyncSuggestThread(self.meta_info, self, self.api, keyword, parent, suggest, engine, text,
+                                               token)
         else:
             return results, None
 
