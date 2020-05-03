@@ -85,7 +85,7 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
         clipboard.setText(output)
     elif flow.output == Source.Result:
         result = ResultItem(plugin_info, flow.name, output, "images/workflow_script.png")
-        result.menus = [MenuItem("📋 复制", ResultAction(clipboard.setText, True, output))]
+        result.menus = [MenuItem(" 复制", ResultAction(clipboard.setText, True, output))]
         api.change_results([result])
 
 

@@ -40,46 +40,46 @@ def pretty_date(time):
 
     if day_diff == 0:
         if second_diff < 10:
-            return "⌛  " + "just now"
+            return "  " + "just now"
         if second_diff < 60:
-            return "⌛  " + str(second_diff) + " seconds ago"
+            return "  " + str(second_diff) + " seconds ago"
         if second_diff < 120:
-            return "⌛  " + "a minute ago"
+            return "  " + "a minute ago"
         if second_diff < 3600:
-            return "⌛  " + str(second_diff // 60) + " minutes ago"
+            return "  " + str(second_diff // 60) + " minutes ago"
         if second_diff < 7200:
-            return "⌛  " + "an hour ago"
+            return "  " + "an hour ago"
         if second_diff < 86400:
-            return "⌛  " + str(second_diff // 3600) + " hours ago"
+            return "  " + str(second_diff // 3600) + " hours ago"
     if day_diff == 1:
-        return "📅  " + "Yesterday"
+        return "  " + "Yesterday"
     if day_diff < 7:
-        return "📅  " + str(day_diff) + " days ago"
+        return "  " + str(day_diff) + " days ago"
     if day_diff < 31:
-        return "📅  " + str(day_diff // 7) + " weeks ago"
+        return "  " + str(day_diff // 7) + " weeks ago"
     if day_diff < 365:
-        return "📅  " + str(day_diff // 30) + " months ago"
-    return "📅  " + str(day_diff // 365) + " years ago"
+        return "  " + str(day_diff // 30) + " months ago"
+    return "  " + str(day_diff // 365) + " years ago"
 
 
 class RepositoryItem(ResultItem):
     def __init__(self, plugin_info, repo: dict):
         star = ""
         if "stargazers_count" in repo:
-            star = "★ %s   " % repo["stargazers_count"]
+            star = " %s   " % repo["stargazers_count"]
         language = ""
         if repo.get("language"):
-            language = "✎ %s   " % repo["language"]
+            language = " %s   " % repo["language"]
         desc = ""
         if repo.get("description"):
-            desc = "📝 %s" % repo["description"]
+            desc = " %s" % repo["description"]
         action = ResultAction(webbrowser.open, True, "https://github.com/" + repo["full_name"])
         super().__init__(plugin_info, repo["full_name"], "{}{}{}".format(star, language, desc),
                          "images/github_repository.png", action)
         if repo["private"]:
             self.icon = "images/github_repository_private.png"
         issue_action = ResultAction(webbrowser.open, True, "https://github.com/{}/issues".format(repo["full_name"]))
-        self.menus = [MenuItem("📬 Issues", issue_action)]
+        self.menus = [MenuItem(" Issues", issue_action)]
 
 
 class EventItem(ResultItem):

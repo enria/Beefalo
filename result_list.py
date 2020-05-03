@@ -148,7 +148,7 @@ class WidgetDelegate(QAbstractItemDelegate):
                 render.render(painter, QRectF(left, top, self.i_size.drop_size[0], self.i_size.drop_size[1]))
 
         font = QFont()
-        font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
+        font.setFamilies(["微软雅黑", "FontAwesome"])
         font.setPointSize(self.i_size.font_size)
         font.setWeight(self.i_size.font_weight)
         sub_font = QFont()

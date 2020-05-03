@@ -57,7 +57,7 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                         to_query = "{} {}{}".format(keyword, str(doc[0:-3]), mode)
                         action = ResultAction(self.api.change_query, False, to_query)
                         item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
-                        item.menus = [MenuItem("🗑️ 删除", ResultAction(self.deleteDoc, doc))]
+                        item.menus = [MenuItem("️ 删除", ResultAction(self.deleteDoc, doc))]
                         results.append(item)
                 with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
                     clipboard = QGuiApplication.clipboard()
@@ -72,7 +72,7 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                                 copy_action = ResultAction(clipboard.setText, True, line)
                                 item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
                             delete_action = ResultAction(self.deleteTip, False, doc_search + ".md", line)
-                            item.menus = [MenuItem("📋 复制", copy_action), MenuItem("🗑️ 删除", delete_action)]
+                            item.menus = [MenuItem(" 复制", copy_action), MenuItem("️ 删除", delete_action)]
                             results.append(item)
 
             else:
@@ -81,7 +81,7 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                                           "{} {}:".format(keyword, str(doc[0:-3])))
                     item = ResultItem(self.meta_info, doc, "选择此文档查看内容", "images/ssj_choose.png", action)
                     item.menus = [
-                        MenuItem("🗑️ 删除", ResultAction(self.deleteDoc, False, doc, "{} {}".format(keyword, text)))]
+                        MenuItem("️ 删除", ResultAction(self.deleteDoc, False, doc, "{} {}".format(keyword, text)))]
                     results.append(item)
 
         else:

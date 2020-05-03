@@ -18,13 +18,13 @@ class PluginHintPlugin(AbstractPlugin, I18nInterface):
 
     def getPluginItem(self, plugin: AbstractPlugin, key):
         action = ResultAction(self.api.change_query, False, key)
-        subTitle = "{}   🔑 {}".format(plugin.meta_info.desc, " • ".join(plugin.meta_info.keywords))
+        subTitle = "{}    {}".format(plugin.meta_info.desc, " • ".join(plugin.meta_info.keywords))
         item = ResultItem(self.meta_info, plugin.meta_info.name, subTitle,
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
-        item.menus = [MenuItem("📂 {}".format(self.i18n_text("open_dir")), ResultAction(os.startfile, True, plugin.meta_info.path))]
+        item.menus = [MenuItem(" {}".format(self.i18n_text("open_dir")), ResultAction(os.startfile, True, plugin.meta_info.path))]
         if SettingInterface in inspect.getmro(plugin):
-            item.menus.append(MenuItem("🛠️ {}".format(self.i18n_text("setting")), ResultAction(self.api.edit_setting, True, plugin)))
+            item.menus.append(MenuItem(" {}".format(self.i18n_text("setting")), ResultAction(self.api.edit_setting, True, plugin)))
         return item
 
     def query(self, keyword, text, token=None, parent=None):

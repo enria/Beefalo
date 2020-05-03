@@ -32,9 +32,9 @@ class TodoPlugin(AbstractPlugin, I18nInterface):
         action = ResultAction(self.change_status, False, todo.id, to_query)
         item = ResultItem(self.meta_info, todo.text, todo.time, icon, action)
         item.menus = [
-            MenuItem("📋 " + self.i18n_text("copy"),
+            MenuItem(" " + self.i18n_text("copy"),
                      ResultAction(QGuiApplication.clipboard().setText, True, todo.text)),
-            MenuItem("🗑️ " + self.i18n_text("delete"),
+            MenuItem("️ " + self.i18n_text("delete"),
                      ResultAction(self.change_status, False, todo.id, to_query, True))]
         return item
 

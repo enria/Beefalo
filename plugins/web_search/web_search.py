@@ -170,7 +170,7 @@ class AsyncSuggestThread(QThread):
 
             else:
                 to_query = "{} {} ".format(self.key, item.text)
-            result_item.menus = [MenuItem("🔍 {}".format(self.i18n.i18n_text("to_input")),
+            result_item.menus = [MenuItem(" {}".format(self.i18n.i18n_text("to_input")),
                                           ResultAction(self.api.change_query, False, to_query))]
             results.append(result_item)
         self.sinOut.emit(self.token, results)
