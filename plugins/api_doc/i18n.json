@@ -1,0 +1,10 @@
+{
+  "zh": {
+    "plugin_name": "API 文档",
+    "plugin_desc": "API 在线文档"
+  },
+  "en": {
+    "plugin_name": "API Document",
+    "plugin_desc": "Online API document"
+  }
+}

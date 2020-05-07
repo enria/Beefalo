@@ -5,7 +5,7 @@ from datetime import datetime
 
 from PyQt5.QtGui import QGuiApplication
 from plugin_api import PluginInfo, ContextApi, AbstractPlugin, get_logger, I18nInterface
-from result_model import ResultItem, ResultAction, MenuItem
+from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 
 log = get_logger("TODO")
 
@@ -32,8 +32,7 @@ class TodoPlugin(AbstractPlugin, I18nInterface):
         action = ResultAction(self.change_status, False, todo.id, to_query)
         item = ResultItem(self.meta_info, todo.text, todo.time, icon, action)
         item.menus = [
-            MenuItem(" " + self.i18n_text("copy"),
-                     ResultAction(QGuiApplication.clipboard().setText, True, todo.text)),
+            MenuItem(" " + self.i18n_text("copy"), CopyAction(todo.text)),
             MenuItem(" " + self.i18n_text("delete"),
                      ResultAction(self.change_status, False, todo.id, to_query, True))]
         return item

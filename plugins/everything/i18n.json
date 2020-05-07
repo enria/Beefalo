@@ -1,0 +1,18 @@
+{
+  "zh": {
+    "plugin_name": "Everything",
+    "plugin_desc": "使用 Everything 查找本机文件",
+    "search_dir": "搜索此文件夹",
+    "open_path": "打文件所在位置",
+    "copy_file_path": "复制文件地址",
+    "copy_file": "复制文件"
+  },
+  "en": {
+    "plugin_name": "Everything",
+    "plugin_desc": "Use Everything to search local files",
+    "search_dir": "Search in this folder",
+    "open_path": "Open this file's path",
+    "copy_file_path": "Copy this file's path",
+    "copy_file": "Copy this file"
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "zh": {
+    "plugin_name": "代码格式化",
+    "plugin_desc": "格式化剪切板中的代码",
+    "cmd_view": "显示剪切板文本",
+    "cmd_rmn": "删除换行",
+    "cmd_adq": "添加引号",
+    "clipboard_blank": "剪切板为空",
+    "copy_fmt_json": "复制格式化后JSON代码",
+    "copy_zip_json": "复制压缩的JSON代码",
+    "json_view": "在JSON视图中打开",
+    "use_browser": "使用浏览器打开",
+    "copy_fmt_xml": "复制格式化后XML代码",
+    "xml_view": "在XML视图中打开",
+    "copy_fmt_sql": "复制格式化后SQL代码",
+    "copy_zip_sql": "复制压缩的SQL代码",
+    "sql_view": "在代码视图中打开",
+    "code_view": "在代码视图中打开",
+    "copy_code": "复制代码"
+  },
+  "en": {
+    "plugin_name": "Code Formatter",
+    "plugin_desc": "Format the clipboard text",
+    "cmd_view": "Display the clipboard text",
+    "cmd_rmn": "Remove new line symbols",
+    "cmd_adq": "Add quotes",
+    "clipboard_blank": "Clipboard is blank",
+    "copy_fmt_json": "Copy formatted JSON code",
+    "copy_zip_json": "Copy Zipped JSON code",
+    "json_view": "Display code in JSON view",
+    "use_browser": "Display code by browser",
+    "copy_fmt_xml": "Copy formatted XML code",
+    "xml_view": "Display code in XML view",
+    "copy_fmt_sql": "Copy formatted SQL code",
+    "copy_zip_sql": "Copy zipped JSON code",
+    "sql_view": "Display code in browser",
+    "code_view": "Display code in browser",
+    "copy_code": "Copy code"
+  }
+}

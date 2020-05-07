@@ -7,7 +7,7 @@ from PyQt5 import QtGui, QtCore
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication
 from PyQt5.QtWidgets import QDialog, QTextEdit, QVBoxLayout, QDesktopWidget
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger
-from result_model import ResultItem, ResultAction, MenuItem
+from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 
 log = get_logger("Workflow")
 
@@ -85,7 +85,7 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
         clipboard.setText(output)
     elif flow.output == Source.Result:
         result = ResultItem(plugin_info, flow.name, output, "images/workflow_script.png")
-        result.menus = [MenuItem(" 复制", ResultAction(clipboard.setText, True, output))]
+        result.menus = [MenuItem(" 复制", CopyAction(output))]
         api.change_results([result])
 
 

@@ -3,10 +3,10 @@ import shutil
 import re
 from datetime import datetime
 
-from PyQt5.QtGui import QIcon, QGuiApplication
+from PyQt5.QtGui import QIcon
 
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
-from result_model import ResultItem, ResultAction, MenuItem
+from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 
 
 class TipsPlugin(AbstractPlugin, SettingInterface):
@@ -60,16 +60,15 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                         item.menus = [MenuItem("️ 删除", ResultAction(self.deleteDoc, doc))]
                         results.append(item)
                 with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
-                    clipboard = QGuiApplication.clipboard()
                     for line in doc.readlines():
                         if line.strip():
                             item_match = re.match(r"\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})]\s(.*)", line)
                             if item_match:
-                                copy_action = ResultAction(clipboard.setText, True, item_match.groups()[1])
+                                copy_action = CopyAction(item_match.groups()[1])
                                 item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
                                                   "images/ssj_item.png")
                             else:
-                                copy_action = ResultAction(clipboard.setText, True, line)
+                                copy_action = CopyAction(line)
                                 item = ResultItem(self.meta_info, line, "", "images/ssj_item.png")
                             delete_action = ResultAction(self.deleteTip, False, doc_search + ".md", line)
                             item.menus = [MenuItem(" 复制", copy_action), MenuItem("️ 删除", delete_action)]

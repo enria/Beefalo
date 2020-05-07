@@ -1,15 +1,15 @@
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
-from result_model import ResultItem, ResultAction
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
+from result_model import ResultItem, ResultAction, CopyAction
 import math
 from inspect import isclass
 import numbers
 
 
-class CalculatorPlugin(AbstractPlugin):
-    meta_info = PluginInfo("计算器", "支持math库下的函数", "images/calculator_icon5.png",
-                           ["*"], False)
+class CalculatorPlugin(AbstractPlugin, I18nInterface):
+    meta_info = PluginInfo(icon="images/calculator_icon5.png", keywords=["*"], async_result=False)
 
     def __init__(self, api: ContextApi):
+        I18nInterface.__init__(self, api.language)
         self.api = api
         self.math_func = {'__builtins__': None}
         for attr in dir(math):
@@ -22,7 +22,8 @@ class CalculatorPlugin(AbstractPlugin):
         try:
             value = eval(text, self.math_func, {})
             if not callable(value):
-                return [ResultItem(self.meta_info, str(value), text, "images/calculator_icon5.png")]
-        except:
+                return [
+                    ResultItem(self.meta_info, str(value), text, "images/calculator_icon5.png", CopyAction(str(value)))]
+        except BaseException as e:
             pass
         return []

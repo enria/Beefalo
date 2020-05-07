@@ -13,8 +13,8 @@ from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QIcon, QGuiApplication
 from PyQt5.QtWidgets import QFileIconProvider
 
-from result_model import ResultItem, ResultAction, MenuItem
-from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi, get_logger
+from result_model import ResultItem, ResultAction, MenuItem, CopyAction
+from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi, get_logger, I18nInterface
 from file_icon import file_icons
 
 log = get_logger("Everything")
@@ -30,10 +30,6 @@ def open_file(file, plugin_info, api):
 
 def to_file_path(file):
     subprocess.Popen(r'explorer /select,' + file)
-
-
-def copy_to_clipboard(text):
-    QGuiApplication.clipboard().setText(text)
 
 
 def copy_file(file_name):
@@ -53,7 +49,8 @@ def get_link_target(link_file):
 
 
 class FileResultItem(ResultItem):
-    def __init__(self, plugin_info, fileName: str, fullPath, isDir, api: ContextApi, system_icon=False):
+    def __init__(self, plugin_info, i18n: I18nInterface, fileName: str, fullPath, isDir, api: ContextApi,
+                 system_icon=False):
         super().__init__(plugin_info)
         if fileName.endswith(".lnk"):
             self.title = str(fileName[:-4])
@@ -85,19 +82,19 @@ class FileResultItem(ResultItem):
         self.action = ResultAction(open_file, True, self.subTitle, plugin_info, api)
         self.menus = []
         if isDir:
-            self.menus.append(MenuItem(" 搜索此文件夹",
+            self.menus.append(MenuItem(" " + i18n.i18n_text("search_dir"),
                                        ResultAction(api.change_query, False,
                                                     "{} {}\\ ".format(plugin_info.keywords[0], fullPath))))
         self.menus += [
-            MenuItem(" 打文件所在位置", ResultAction(to_file_path, True, self.subTitle)),
-            MenuItem(" 复制文件地址", ResultAction(copy_to_clipboard, True, self.subTitle)),
-            MenuItem(" 复制文件", ResultAction(copy_file, True, self.subTitle))]
+            MenuItem(" " + i18n.i18n_text("open_path"), ResultAction(to_file_path, True, self.subTitle)),
+            MenuItem(" " + i18n.i18n_text("copy_file_path"), CopyAction(self.subTitle)),
+            MenuItem(" " + i18n.i18n_text("copy_file"), ResultAction(copy_file, True, self.subTitle))]
 
 
 class AsyncSearchThread(QThread):
     sinOut = pyqtSignal([str, list])
 
-    def __init__(self, parent, text, token, api, plugin_info, query_max=50, system_icon=False, root=None):
+    def __init__(self, parent, text, token, api, plugin_info, i18n, query_max=50, system_icon=False, root=None):
         pythoncom.CoInitialize()
         super(AsyncSearchThread, self).__init__(parent)
         self.text = text
@@ -107,6 +104,7 @@ class AsyncSearchThread(QThread):
         self.query_max = query_max
         self.system_icon = system_icon
         self.root = root
+        self.i18n = i18n
 
     @staticmethod
     def getFileName(path: str):
@@ -114,7 +112,7 @@ class AsyncSearchThread(QThread):
 
     def run(self):
         try:
-            results = everything_query(self.root, self.text, self.query_max, self.plugin_info, self.api,
+            results = everything_query(self.root, self.text, self.query_max, self.plugin_info, self.i18n, self.api,
                                        self.system_icon)
             self.sinOut.emit(self.token, results)
         except BaseException as e:
@@ -124,7 +122,7 @@ class AsyncSearchThread(QThread):
 global everything_dll
 
 
-def everything_query(root, text, query_max, plugin_info, api, system_icon):
+def everything_query(root, text, query_max, plugin_info, i18n, api, system_icon):
     if root:
         root_path = "|".join(["<{}>".format(path) for path in root])
         everything_dll.Everything_SetSearchW(root_path + " " + text)
@@ -141,27 +139,28 @@ def everything_query(root, text, query_max, plugin_info, api, system_icon):
         path = ctypes.wstring_at(fullPath)
         if system_icon:
             results.append(
-                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
+                FileResultItem(plugin_info, i18n, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
                                api, True))
         else:
             results.append(
-                FileResultItem(plugin_info, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
+                FileResultItem(plugin_info, i18n, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
                                api))
     return results
 
 
-class EverythingPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("Everything", "使用Everything查找本机文件", "images/everything_search.png",
-                           ["find", "*"], True)
+class EverythingPlugin(AbstractPlugin, SettingInterface, I18nInterface):
+    meta_info = PluginInfo(icon="images/everything_search.png", keywords=["find", "*"], async_result=True)
 
     def __init__(self, api: ContextApi):
-        super().__init__()
+        I18nInterface.__init__(self, api.language)
+        SettingInterface.__init__(self)
         self.api = api
         global everything_dll
         dll_file = "Everything32.dll"
         if platform.architecture()[0].startswith("64"):
             dll_file = "Everything64.dll"
-        everything_dll = ctypes.WinDLL(os.path.join(self.meta_info.path, "dll", dll_file))
+        everything_dll = ctypes.WinDLL(os.path.join
+                                       (self.meta_info.path, "dll", dll_file))
         everything_dll.Everything_GetResultSize.argtypes = [ctypes.c_int, ctypes.POINTER(ctypes.c_ulonglong)]
         everything_dll.Everything_GetResultFileNameW.argtypes = [DWORD]
         everything_dll.Everything_GetResultFileNameW.restype = ctypes.POINTER(ctypes.c_wchar)
@@ -170,12 +169,12 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
         pythoncom.CoInitialize()  # wscript.shell
         if text.strip():
             if keyword and keyword != "*":
-                return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info,
+                return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info, self,
                                              self.get_setting("everything_query_max"),
                                              self.get_setting("system_icon"))
             else:
                 return everything_query(self.get_setting("link_root"), text, self.get_setting("everything_query_max"),
-                                        self.meta_info, self.api, self.get_setting("system_icon")), None
+                                        self.meta_info, self, self.api, self.get_setting("system_icon")), None
         else:
             results = []
             recent_dir = os.path.join(str(Path.home()), "AppData/Roaming/Microsoft/Windows/Recent")
@@ -183,6 +182,6 @@ class EverythingPlugin(AbstractPlugin, SettingInterface):
             if self.get_setting("everything_query_max"):
                 paths = paths[:self.get_setting("everything_query_max")]
             for item in paths:
-                results.append(FileResultItem(self.meta_info, item.name, str(item), False, self.api,
+                results.append(FileResultItem(self.meta_info, self, item.name, str(item), False, self.api,
                                               self.get_setting("system_icon")))
             return results, None

@@ -3,7 +3,7 @@ import requests
 from PyQt5.QtCore import QThread, pyqtSignal
 from bs4 import BeautifulSoup
 
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
 from result_model import ResultItem, ResultAction
 
 cache = {}
@@ -64,12 +64,12 @@ class AsyncSuggestThread(QThread):
         self.sinOut.emit(self.token, build_result(self.plugin_info, self.config, self.text))
 
 
-class APIDocPlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("API 文档", "API在线文档", "images/API_icon.png",
-                           [], True)
+class APIDocPlugin(AbstractPlugin, SettingInterface, I18nInterface):
+    meta_info = PluginInfo(icon="images/API_icon.png", keywords=[], async_result=True)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
+        I18nInterface.__init__(self, api.language)
         self.api = api
         self.configs = {}
         self.load_docs()

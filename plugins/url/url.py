@@ -6,7 +6,7 @@ from urllib import parse
 from PyQt5.QtGui import QGuiApplication
 
 from plugin_api import PluginInfo, ContextApi, AbstractPlugin, get_logger
-from result_model import ResultItem, ResultAction, MenuItem
+from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 
 log = get_logger("URL")
 
@@ -31,8 +31,7 @@ class URLPlugin(AbstractPlugin):
 
     def generate(self, text):
         short_url = shorten_url(text)
-        item = ResultItem(self.meta_info, short_url, "点击复制", "images/url_copy.png",
-                          ResultAction(QGuiApplication.clipboard().setText, True, short_url))
+        item = ResultItem(self.meta_info, short_url, "点击复制", "images/url_copy.png", CopyAction(short_url))
         item.menus = [MenuItem(" 在浏览器中打开", ResultAction(openBrowser, True, short_url))]
         self.api.change_results([item])
 

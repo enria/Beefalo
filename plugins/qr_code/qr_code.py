@@ -8,7 +8,7 @@ from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
 from PyQt5.QtGui import QIcon, QFont, QGuiApplication, QPixmap
 from PyQt5.QtWidgets import QDialog, QVBoxLayout, QDesktopWidget, QLabel
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, get_logger, I18nInterface
 from result_model import ResultItem, ResultAction
 
 log = get_logger("Qr Code")
@@ -55,12 +55,12 @@ class Dialog(QDialog):
         self.setWindowIcon(QIcon(os.path.join(plugin_info.path, "images/qrcode_icon.png")))
 
 
-class QrCodePlugin(AbstractPlugin, SettingInterface):
-    meta_info = PluginInfo("QR Code", "Generate Qr Code by what you are typing", "images/qrcode_icon.png",
-                           ["qrc"], False)
+class QrCodePlugin(AbstractPlugin, SettingInterface, I18nInterface):
+    meta_info = PluginInfo(icon="images/qrcode_icon.png", keywords=["qrc"], async_result=False)
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
+        I18nInterface.__init__(self, api.language)
         self.api = api
         self.server = None
         self.dialog: Dialog = None

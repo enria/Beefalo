@@ -1,0 +1,10 @@
+{
+  "zh": {
+    "plugin_name": "二维码",
+    "plugin_desc": "生成二维码"
+  },
+  "en": {
+    "plugin_name": "QR Code",
+    "plugin_desc": "Generate Qr Code"
+  }
+}

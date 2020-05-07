@@ -1,0 +1,10 @@
+{
+  "zh": {
+    "plugin_name": "计算器",
+    "plugin_desc": "支持 Python math 库下的函数，以及进制转换"
+  },
+  "en": {
+    "plugin_name": "Calculator",
+    "plugin_desc": "Support the function of 'math' that is a Python inner package and number system conversion"
+  }
+}

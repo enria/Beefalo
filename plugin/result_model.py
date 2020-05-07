@@ -1,3 +1,4 @@
+from PyQt5.QtGui import QGuiApplication
 from plugin_api import PluginInfo
 
 
@@ -6,6 +7,11 @@ class ResultAction:
         self.method = method
         self.close = close
         self.args = args
+
+
+class CopyAction(ResultAction):
+    def __init__(self, text, close=True):
+        super().__init__(QGuiApplication.clipboard().setText, close, text)
 
 
 class MenuItem(object):

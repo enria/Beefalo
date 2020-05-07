@@ -6,8 +6,8 @@ from lxml import etree
 
 from PyQt5.QtGui import QGuiApplication
 
-from plugin_api import AbstractPlugin, ContextApi, PluginInfo, get_logger
-from result_model import ResultItem, ResultAction
+from plugin_api import AbstractPlugin, ContextApi, PluginInfo, get_logger, I18nInterface
+from result_model import ResultItem, ResultAction, CopyAction
 
 log = get_logger("Formatter")
 
@@ -16,16 +16,17 @@ def convertJsTemplate(text):
     return re.sub(r"([\\`$])", r"\\\1", text)
 
 
-class FormatterPlugin(AbstractPlugin):
-    commands = {"view": "显示剪切板文本", "rmn": "删除换行", "adq": "添加引号"}
-
-    meta_info = PluginInfo("Formatter", "美化剪切板中的代码", "images/fmt_icon.png",
-                           ["fmt"], False)
+class FormatterPlugin(AbstractPlugin, I18nInterface):
+    meta_info = PluginInfo(icon="images/fmt_icon.png", keywords=["fmt"], async_result=False)
 
     def __init__(self, api: ContextApi):
+        I18nInterface.__init__(self, api.language)
         self.api = api
         self.view = os.path.join(self.meta_info.path, "view")
         self.sqlHelper = SQLHelper()
+        self.commands = {"view": self.i18n_text("cmd_view"),
+                         "rmn": self.i18n_text("cmd_rmn"),
+                         "adq": self.i18n_text("cmd_adq")}
 
     def query(self, keyword, text, token=None, parent=None):
         results = []
@@ -33,7 +34,7 @@ class FormatterPlugin(AbstractPlugin):
         clipText = clipboard.text()
         text = text.strip()
         if not clipText:
-            results.append(ResultItem(self.meta_info, "剪切板为空", "", "images/fmt_copy.png"))
+            results.append(ResultItem(self.meta_info, self.i18n_text("clipboard_blank"), "", "images/fmt_copy.png"))
             return results
         if not text:
             clipText = clipText.strip()
@@ -43,37 +44,45 @@ class FormatterPlugin(AbstractPlugin):
                     if clipText.startswith(("{", "[")):
                         jsonData = yaml.load(clipText, Loader=yaml.BaseLoader)
                         fmt = json.dumps(jsonData, indent=4, ensure_ascii=False)
-                        results.append(ResultItem(self.meta_info, "复制格式化后的JSON文本", fmt, "images/fmt_format.png",
-                                                  ResultAction(clipboard.setText, True, fmt)))
+                        results.append(
+                            ResultItem(self.meta_info, self.i18n_text("copy_fmt_json"), fmt, "images/fmt_format.png",
+                                       CopyAction(fmt)))
                         zipped = json.dumps(jsonData, ensure_ascii=False)
-                        results.append(ResultItem(self.meta_info, "复制压缩后的JSON文本", zipped, "images/fmt_zip.png",
-                                                  ResultAction(clipboard.setText, True, zipped)))
+                        results.append(
+                            ResultItem(self.meta_info, self.i18n_text("copy_zip_json"), zipped, "images/fmt_zip.png",
+                                       CopyAction(zipped)))
                         action = ResultAction(self.openViewpage, True, "json/json.html", "json/json.js",
                                               "var jsonData=`%s`" % convertJsTemplate(fmt))
                         results.append(
-                            ResultItem(self.meta_info, "在JSON视图中打开", "使用默认浏览器", "images/fmt_browser.png", action))
+                            ResultItem(self.meta_info, self.i18n_text("json_view"), self.i18n_text("use_browser"),
+                                       "images/fmt_browser.png", action))
                         return results
                     elif clipText.startswith("<"):
                         dom = etree.fromstring(clipText.encode("utf-8"))  # or xml.dom.minidom.parseString(xml_string)
                         fmt = etree.tostring(dom, pretty_print=True).decode("utf-8")
-                        results.append(ResultItem(self.meta_info, "复制格式化后的XML文本", fmt, "images/fmt_format.png",
-                                                  ResultAction(clipboard.setText, True, fmt)))
+                        results.append(
+                            ResultItem(self.meta_info, self.i18n_text("copy_fmt_xml"), fmt, "images/fmt_format.png",
+                                       CopyAction(fmt)))
                         action = ResultAction(self.openViewpage, True, "xml/xml.html", "xml/xml.js",
                                               "var xmlData=`%s`" % convertJsTemplate(fmt))
                         results.append(
-                            ResultItem(self.meta_info, "在浏览器中查看XML结构", "使用默认浏览器", "images/fmt_browser.png", action))
+                            ResultItem(self.meta_info, self.i18n_text("xml_view"), self.i18n_text("use_browser"),
+                                       "images/fmt_browser.png", action))
                         return results
                     elif self.sqlHelper.isSql(clipText):
                         fmt = self.sqlHelper.format(clipText)
-                        results.append(ResultItem(self.meta_info, "复制格式化后的SQL", fmt, "images/fmt_format.png",
-                                                  ResultAction(clipboard.setText, True, fmt)))
+                        results.append(
+                            ResultItem(self.meta_info, self.i18n_text("copy_fmt_sql"), fmt, "images/fmt_format.png",
+                                       CopyAction(fmt)))
                         zipped = self.sqlHelper.mini(clipText)
-                        results.append(ResultItem(self.meta_info, "复制压缩后的SQL", zipped, "images/fmt_zip.png",
-                                                  ResultAction(clipboard.setText, True, zipped)))
+                        results.append(
+                            ResultItem(self.meta_info, self.i18n_text("copy_zip_sql"), zipped, "images/fmt_zip.png",
+                                       CopyAction(zipped)))
                         action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                               "var inputLan='sql',textData=`%s`" % convertJsTemplate(fmt))
                         results.append(
-                            ResultItem(self.meta_info, "在浏览器中查看SQL", "使用默认浏览器", "images/fmt_browser.png", action))
+                            ResultItem(self.meta_info, self.i18n_text("sql_view"), self.i18n_text("use_browser"),
+                                       "images/fmt_browser.png", action))
                         return results
                 except BaseException as e:
                     log.error(e)
@@ -94,7 +103,8 @@ class FormatterPlugin(AbstractPlugin):
             elif text == "view":
                 action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                       "var textData=`%s`" % convertJsTemplate(clipText))
-                results.append(ResultItem(self.meta_info, "在代码视图中打开", clipText, "images/fmt_browser.png", action))
+                results.append(
+                    ResultItem(self.meta_info, self.i18n_text("code_view"), clipText, "images/fmt_browser.png", action))
                 # TODO json sql
             else:
                 for cmd in self.commands:
@@ -106,12 +116,14 @@ class FormatterPlugin(AbstractPlugin):
                             ResultItem(self.meta_info, cmd, self.commands[cmd], "images/fmt_cmd.png", action))
 
             if fmt:
-                action = ResultAction(clipboard.setText, True, fmt)
-                results.append(ResultItem(self.meta_info, "复制%s后的文本" % cmd_desc, fmt, "images/fmt_copy.png", action))
+                action = CopyAction(fmt)
+                results.append(
+                    ResultItem(self.meta_info, self.i18n_text("copy_code"), fmt, "images/fmt_copy.png", action))
                 action = ResultAction(self.openViewpage, True, "code/code.html", "code/code.js",
                                       "var textData=`%s`" % convertJsTemplate(fmt))
                 results.append(
-                    ResultItem(self.meta_info, "在浏览器中查看%s后的文本" % cmd_desc, fmt, "images/fmt_browser.png", action))
+                    ResultItem(self.meta_info, self.i18n_text("use_browser"), fmt, "images/fmt_browser.png",
+                               action))
         return results
 
     def openViewpage(self, page, dataFile, text):
