@@ -15,14 +15,15 @@ from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction)
 
+sys.path.append("plugin")
+from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
+
 from keyboard import Hotkey
 from result_list import ResultListModel, WidgetDelegate
 from gui_size import WindowSize, ItemSize
 
 # load plugin api from folder.
 # For plugin development, just need to add the plugin api folder to path.
-sys.path.append("plugin")
-from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
 
 log = get_logger("主窗口")
 

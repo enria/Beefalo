@@ -3,6 +3,9 @@ import qrcode
 import re
 import hashlib
 from urllib.parse import quote, unquote
+import logging
+
+from werkzeug._internal import _log
 
 from PyQt5 import QtCore
 from PyQt5.QtCore import Qt, QThread, pyqtSignal, QObject
@@ -13,6 +16,7 @@ from result_model import ResultItem, ResultAction
 
 log = get_logger("Qr Code")
 
+_log=log
 
 class Dialog(QDialog):
     def __init__(self, text, plugin_info: PluginInfo, api: ContextApi):
@@ -158,9 +162,10 @@ class WebServer(QThread):
             return redirect(to)
 
         try:
-            self.app.run(port=self.server_port, host=self.server_host)
-        except:
+            self.app.run(port=self.server_port, host=self.server_host,debug=False)
+        except BaseException as e:
             log.error("Qr code server starting failed")
+            log.error(e)
 
     def set_text(self, text: str):
         arg = ""
