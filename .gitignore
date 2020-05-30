@@ -1,5 +1,5 @@
 .idea
 __pycache__
-log/*.log
+log/*.log*
 /plugins/translate/speech.mp3
 /venv/

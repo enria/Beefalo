@@ -75,7 +75,7 @@ class BeefaloWidget(QWidget, SettingInterface):
     def load_plugins(self):
         plugins_dir = self.get_setting("plugins_dir")
         for plugin_dir in os.listdir(plugins_dir):
-            if os.path.isdir(os.path.join(plugins_dir, plugin_dir)):
+            if os.path.isdir(os.path.join(plugins_dir, plugin_dir)) and plugin_dir not in self.get_setting("exclude_plugin_dir"):
                 # append plugin's folder path
                 sys.path.append(os.path.join(plugins_dir, plugin_dir))
                 plugin_module = importlib.import_module("%s.%s" % (plugins_dir, plugin_dir))
