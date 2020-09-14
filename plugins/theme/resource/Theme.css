@@ -10,9 +10,18 @@
     margin:0px;
 }}
 #ResultListView{{
-    padding-top:10px;
     border:0;
     background-color:{rb};
+}}
+#QueryProgressBar{{
+    padding-top:3px;
+    padding-bottom:3px;
+    background-color:{mb};
+    border:0;
+}}
+#QueryProgressBar::chunk{{
+    background-color: {c};
+    width: 2px;
 }}
 QScrollBar::handle:vertical
 {{

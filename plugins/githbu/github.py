@@ -20,7 +20,7 @@ global proxy
 def get_icon(url):
     resp = requests.get(url, proxies=proxy)
     img = QPixmap()
-    img.loadFromData(resp.content)
+    img.loadFromData(resp.content)  
     return QIcon(img)
 
 
@@ -120,6 +120,7 @@ class GitHubPlugin(AbstractPlugin, SettingInterface):
     def query(self, keyword, text, token=None, parent=None):
         text = text.strip()
         if text:
+            self.api.start_progress()
             self.api.change_results([])
             if text.startswith("all:"):
                 results = self.my_activity()
@@ -138,6 +139,7 @@ class GitHubPlugin(AbstractPlugin, SettingInterface):
                                                "images/github_icon.png",
                                                ResultAction(self.search_repository, False, text))
                 results = [search_repository, search_in_page]
+            self.api.end_progress()
             return results
         else:
             home = ResultItem(self.meta_info, "Home",

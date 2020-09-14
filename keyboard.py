@@ -13,8 +13,8 @@ log = get_logger("热键")
 
 
 class Hotkey(QThread):
-    sinOut = pyqtSignal()
-    inputSinOut = pyqtSignal([str])
+    sin_out = pyqtSignal()
+    input_sin_out = pyqtSignal([str])
 
     meta_info = PluginInfo()
     meta_info.path = ""
@@ -48,9 +48,9 @@ class Hotkey(QThread):
                     param = int(msg.wParam)
                     if param in param_map:
                         if not param_map[param]:  # main hotkey
-                            self.sinOut.emit()
+                            self.sin_out.emit()
                         else:
-                            self.inputSinOut.emit(param_map[param])
+                            self.input_sin_out.emit(param_map[param])
                 user32.TranslateMessage(ctypes.byref(msg))
                 user32.DispatchMessageA(ctypes.byref(msg))
         finally:

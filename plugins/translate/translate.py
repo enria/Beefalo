@@ -38,7 +38,7 @@ def play_sound(plugin_info, api, url):
 
 
 class YoudaoApiThread(QThread):
-    sinOut = pyqtSignal([str, list])
+    sin_out = pyqtSignal([str, list])
 
     def __init__(self, plugin_info, parent, api, text, token):
         super(YoudaoApiThread, self).__init__(parent)
@@ -83,7 +83,7 @@ class YoudaoApiThread(QThread):
                 if apiResp["basic"].get("explains"):
                     for exp in apiResp["basic"]["explains"]:
                         results.append(DictResultItem(self.plugin_info, exp, self.text, "translate"))
-            self.sinOut.emit(self.token, results)
+            self.sin_out.emit(self.token, results)
         except BaseException as e:
             log.error(e)
 

@@ -7,6 +7,7 @@ class ResultAction:
         self.method = method
         self.close = close
         self.args = args
+        self.cost = False
 
 
 class CopyAction(ResultAction):

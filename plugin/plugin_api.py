@@ -3,11 +3,13 @@ import os
 import logging
 import sys
 from logging.handlers import TimedRotatingFileHandler
+from functools import wraps
 
 
 class ContextApi:
     def __init__(self, change_query, show_message, change_theme, plugin_types,
-                 get_theme, change_results, change_selected_result, play_media, setting_plugins, language):
+                 get_theme, change_results, change_selected_result, start_progress, end_progress, play_media,
+                 setting_plugins, language):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
@@ -15,6 +17,8 @@ class ContextApi:
         self.get_theme = get_theme
         self.change_results = change_results
         self.change_selected_result = change_selected_result
+        self.start_progress = start_progress
+        self.end_progress = end_progress
         self.play_media = play_media
         self.setting_plugins = setting_plugins
         self.edit_setting = None
@@ -89,7 +93,7 @@ class SingleLogger(object):
     log = logging.getLogger("Beefalo")
     log.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(plugin_name)s - %(levelname)s - %(message)s")
-    log_file_handler = TimedRotatingFileHandler(filename="log/Beefalo.log", when="M", encoding="utf-8")
+    log_file_handler = TimedRotatingFileHandler(filename="log/Beefalo.log", when="D", encoding="utf-8")
     log_file_handler.setFormatter(formatter)
     log_file_handler.setLevel(logging.INFO)
     log.addHandler(log_file_handler)

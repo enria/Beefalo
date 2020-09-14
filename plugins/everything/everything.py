@@ -92,7 +92,7 @@ class FileResultItem(ResultItem):
 
 
 class AsyncSearchThread(QThread):
-    sinOut = pyqtSignal([str, list])
+    sin_out = pyqtSignal([str, list])
 
     def __init__(self, parent, text, token, api, plugin_info, i18n, query_max=50, system_icon=False, root=None):
         pythoncom.CoInitialize()
@@ -114,7 +114,7 @@ class AsyncSearchThread(QThread):
         try:
             results = everything_query(self.root, self.text, self.query_max, self.plugin_info, self.i18n, self.api,
                                        self.system_icon)
-            self.sinOut.emit(self.token, results)
+            self.sin_out.emit(self.token, results)
         except BaseException as e:
             log.error(e)
 

@@ -26,7 +26,7 @@ class ItemSelection(object):
 
 
 class ResultListModel(QAbstractListModel):
-    sinOut = pyqtSignal()
+    sin_out = pyqtSignal()
 
     def __init__(self, view):
         super().__init__()
@@ -54,7 +54,7 @@ class ResultListModel(QAbstractListModel):
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount())
             self.listItemData.append(itemData)
             self.endInsertRows()
-            self.sinOut.emit()
+            self.sin_out.emit()
 
     def addItems(self, itemDatas: list):
         if itemDatas:
@@ -63,7 +63,7 @@ class ResultListModel(QAbstractListModel):
             self.beginInsertRows(QModelIndex(), self.rowCount(), self.rowCount() + len(itemDatas) - 1)
             self.listItemData += itemDatas
             self.endInsertRows()
-            self.sinOut.emit()
+            self.sin_out.emit()
 
     def changeItems(self, itemDatas, instant):
         change_size = len(itemDatas) != self.rowCount() or self.select.expand
@@ -84,11 +84,11 @@ class ResultListModel(QAbstractListModel):
         else:
             self.select.set_selected(-1)
         if change_size:
-            self.sinOut.emit()
+            self.sin_out.emit()
 
     def deleteItem(self, index):
         del self.listItemData[index]
-        self.sinOut.emit()
+        self.sin_out.emit()
 
     def getItem(self, index):
         if -1 < index < len(self.listItemData):

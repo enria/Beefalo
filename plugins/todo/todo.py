@@ -19,7 +19,7 @@ class Todo(object):
 
 
 class TodoPlugin(AbstractPlugin, I18nInterface):
-    meta_info = PluginInfo(icon="images/todo_icon1.png", keywords=["todo"], async_result=False)
+    meta_info = PluginInfo(icon="images/todo_icon1.png", keywords=["todo"])
     todo_file = "todo.md"
 
     def __init__(self, api: ContextApi):

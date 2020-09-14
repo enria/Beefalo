@@ -6,6 +6,8 @@ import time
 import ctypes
 import re
 import importlib
+
+import requests
 import win32con
 from PyQt5.QtMultimedia import QMediaPlayer
 from win32process import SuspendThread, ResumeThread
@@ -13,7 +15,7 @@ from win32process import SuspendThread, ResumeThread
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
 from PyQt5.QtGui import QCursor, QKeySequence, QIcon
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
-                             QSizePolicy, QSystemTrayIcon, QMenu, QAction)
+                             QSizePolicy, QSystemTrayIcon, QMenu, QAction, QProgressBar)
 
 sys.path.append("plugin")
 from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
@@ -38,8 +40,10 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         # define ui widgets
         self.result_model = ResultListModel(self)
-        self.result_model.sinOut.connect(self.adjust_size)
+        self.result_model.sin_out.connect(self.adjust_size)
         self.ws_listview = QListView()
+        self.ws_progress_bar = QProgressBar()
+        self.progress_cnt = 0
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
         self.m_size = WindowSize()
@@ -60,7 +64,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         self.installEventFilter(self)
         self.debounce_thread = DebounceThread(self)
-        self.debounce_thread.sinOut.connect(self.async_change_result)
+        self.debounce_thread.sin_out.connect(self.async_change_result)
         self.debounce_thread.start()
 
         self.result_size = min(10, max(4, self.get_setting("result_size")))
@@ -69,13 +73,13 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def play_media(self, media_content):
         self.player.setMedia(media_content)
-        # self.player.setVolume(80)
         self.player.play()
 
     def load_plugins(self):
         plugins_dir = self.get_setting("plugins_dir")
         for plugin_dir in os.listdir(plugins_dir):
-            if os.path.isdir(os.path.join(plugins_dir, plugin_dir)) and plugin_dir not in self.get_setting("exclude_plugin_dir"):
+            if os.path.isdir(os.path.join(plugins_dir, plugin_dir)) and plugin_dir not in self.get_setting(
+                    "exclude_plugin_dir"):
                 # append plugin's folder path
                 sys.path.append(os.path.join(plugins_dir, plugin_dir))
                 plugin_module = importlib.import_module("%s.%s" % (plugins_dir, plugin_dir))
@@ -90,7 +94,10 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         api = ContextApi(self.set_input_text, sys_tray.showMessage,
                          self.change_theme, self.plugin_types,
-                         self.get_theme, self.async_change_result, self.change_selected_result, self.play_media,
+                         self.get_theme,
+                         self.async_change_result, self.change_selected_result,
+                         self.start_progress, self.end_progress,
+                         self.play_media,
                          self.setting_plugins, self.get_setting("language"))
 
         for plugin_type in self.plugin_types:
@@ -122,7 +129,6 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
         vly = QVBoxLayout()
-
         font = self.ws_input.font()
         font.setFamily("微软雅黑")
         font.setPointSize(self.m_size.editor_font_size)  # change it's size
@@ -131,6 +137,15 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handle_text_changed)
         self.ws_input.returnPressed.connect(self.handle_result_triggered)
+
+        self.ws_progress_bar.setMaximum(0)
+        self.ws_progress_bar.setMinimum(0)
+        self.ws_progress_bar.setVisible(False)
+        self.ws_progress_bar.setObjectName("QueryProgressBar")
+        self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
+        sp_retain = self.ws_progress_bar.sizePolicy()
+        sp_retain.setRetainSizeWhenHidden(True)
+        self.ws_progress_bar.setSizePolicy(sp_retain)
 
         self.ws_listview.setObjectName("ResultListView")
         self.ws_listview.setModel(self.result_model)
@@ -143,18 +158,30 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.mouseMoveEvent = self.mouseMoveEvent
 
         vly.addWidget(self.ws_input)
+        vly.addWidget(self.ws_progress_bar)
         vly.addWidget(self.ws_listview)
         vly.setContentsMargins(self.m_size.main_padding[0],
                                self.m_size.main_padding[1],
                                self.m_size.main_padding[0],
-                               self.m_size.main_padding[1])
+                               0)
         vly.setSpacing(0)
+        vly.setAlignment(Qt.AlignTop)
         self.setLayout(vly)
         self.setWindowFlag(Qt.ToolTip)
         self.setObjectName("MainWidget")
         self.adjust_size()
-        self.show()
-        self.activateWindow()
+        if self.get_setting("start_show"):    
+            self.show()
+            self.activateWindow()
+
+    def start_progress(self):
+        self.ws_progress_bar.setVisible(True)
+        self.progress_cnt += 1
+
+    def end_progress(self):
+        self.progress_cnt -= 1
+        if self.progress_cnt == 0:
+            self.ws_progress_bar.setVisible(False)
 
     def mouseMoveEvent(self, e):
         # todo mouse select result item
@@ -178,7 +205,10 @@ class BeefaloWidget(QWidget, SettingInterface):
 
         # TODO find more tricky method
         actual_height = min(height, max_height)
-        self.ws_listview.setFixedHeight(actual_height - base_height)
+        if cnt:
+            self.ws_listview.setFixedHeight(actual_height - base_height - self.m_size.result_margin_top)
+        else:
+            self.ws_listview.setFixedHeight(actual_height - base_height)
         self.setFixedHeight(actual_height)
 
     def change_theme(self, css, theme):
@@ -190,8 +220,8 @@ class BeefaloWidget(QWidget, SettingInterface):
         return self.theme
 
     def add_global_hotkey(self):
-        self.hotKeys.sinOut.connect(self.change_visible)
-        self.hotKeys.inputSinOut.connect(self.set_input_text)
+        self.hotKeys.sin_out.connect(self.change_visible)
+        self.hotKeys.input_sin_out.connect(self.set_input_text)
         self.hotKeys.start()
 
         QShortcut(QKeySequence("Up"), self, self.selected_up)
@@ -211,7 +241,7 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.setVisible(True)
 
     def set_input_text(self, text):
-        # if the text is the same to the origin, it's called by plugin bo refresh result list
+        # if the text is the same to the origin, it's called by plugin too refresh result list
         # in this case we should cancel the input debounce and don't change the selected row (try to)
         # the 'instant' variable make sense in self.async_change_result, debounce thread and delegate
         if self.ws_input.text() == text:
@@ -311,6 +341,7 @@ class BeefaloWidget(QWidget, SettingInterface):
             if action.method:
                 action.method(*action.args)
 
+
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible(False)
@@ -333,7 +364,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
 
 class DebounceThread(QThread):
-    sinOut = pyqtSignal([list])
+    sin_out = pyqtSignal([list])
 
     def __init__(self, view: 'BeefaloWidget'):
         super(DebounceThread, self).__init__(view)
@@ -381,11 +412,11 @@ class DebounceThread(QThread):
                             item, asyncThread = plugin.query(keyword, text, self.view.token, self.obj)
                             result += item
                             if asyncThread:
-                                asyncThread.sinOut.connect(self.view.async_add_results)
+                                asyncThread.sin_out.connect(self.view.async_add_results)
                                 asyncThread.start()
                         else:
                             result += plugin.query(keyword, text)
-                self.sinOut.emit(result)
+                self.sin_out.emit(result)
                 if self.work:
                     self.suspend()
             else:
@@ -417,7 +448,7 @@ def start_app():
     # As the mother class is used as a daemon, this line must be added to change that behavior:
     app.setQuitOnLastWindowClosed(False)
 
-    sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
+    sys_tray.setIcon(QIcon("images/beefalo.ico"))  # 设置托盘图标
     sys_tray_menu = QMenu()
     show_action = QAction(QIcon("images/radio-fill.png"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
     show_action.triggered.connect(window.change_visible)

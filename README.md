@@ -25,6 +25,8 @@ Wox的功能，目前已经实现了我需要的部分，包括：
 另外，还实现了一些比较方便的功能：
 + [Workflow](plugins/workflow)
 + [API文档](plugins/api_doc)
++ [GitHub](plugins/github)
++ [TODO](plugins/todo)
 + [主题切换](plugins/theme)
 ![主题列表](images/readme_theme.gif)
 + [插件列表](plugins/plugin_hint)  

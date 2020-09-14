@@ -2,6 +2,7 @@ import os
 import shutil
 import re
 from datetime import datetime
+from pathlib import Path
 
 from PyQt5.QtGui import QIcon
 
@@ -38,18 +39,20 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
         else:
             tip = text
         doc_matchs, total_match = [], False
+        docs=[path.name \
+            for path in sorted(Path(self.doc_root).iterdir(), key=os.path.getmtime,reverse=True)\
+            if not path.is_dir() and path.name.endswith(".md")]
         if doc_search:
             search_lower = doc_search.lower()
-            for doc in os.listdir(self.doc_root):
+            for doc in docs:
                 doc_lower = doc.lower()
-                if doc.endswith(".md") and not os.path.isdir(doc) and str(doc_lower[0:-3]).find(search_lower) > -1:
+                if str(doc_lower[0:-3]).find(search_lower) > -1:
                     doc_matchs.append(doc)
                     if doc_lower == search_lower + ".md":
                         total_match = True
         else:
-            for doc in os.listdir(self.doc_root):
-                if doc.endswith(".md") and not os.path.isdir(doc):
-                    doc_matchs.append(doc)
+            for doc in docs:
+                doc_matchs.append(doc)
         if not tip.strip():
             if total_match:
                 for doc in doc_matchs:

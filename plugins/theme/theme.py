@@ -44,7 +44,8 @@ class ThemePlugin(AbstractPlugin, SettingInterface, I18nInterface):
         return results
 
     def change_theme(self, theme):
-        css = self.theme_template.format(mb=theme.style["background"],
+        css = self.theme_template.format(c=theme.style["color"],
+                                         mb=theme.style["background"],
                                          eb=theme.style["editor"]["background"],
                                          ec=theme.style["editor"]["color"],
                                          ebd=theme.style["editor"]["border"],

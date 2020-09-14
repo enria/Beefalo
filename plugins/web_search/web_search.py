@@ -144,7 +144,7 @@ class WebSearchResultItem(ResultItem):
 
 
 class AsyncSuggestThread(QThread):
-    sinOut = pyqtSignal([str, list])
+    sin_out = pyqtSignal([str, list])
 
     def __init__(self, plugin_info, i18n: I18nInterface, api: ContextApi, key, parent, suggestion: SearchSuggestion,
                  engine: SearchEngine,
@@ -173,7 +173,7 @@ class AsyncSuggestThread(QThread):
             result_item.menus = [MenuItem(" {}".format(self.i18n.i18n_text("to_input")),
                                           ResultAction(self.api.change_query, False, to_query))]
             results.append(result_item)
-        self.sinOut.emit(self.token, results)
+        self.sin_out.emit(self.token, results)
 
 
 class WebSearchPlugin(AbstractPlugin, SettingInterface, I18nInterface):

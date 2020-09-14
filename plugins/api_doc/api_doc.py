@@ -49,7 +49,7 @@ def build_result(plugin_info, config: APIConfig, text):
 
 
 class AsyncSuggestThread(QThread):
-    sinOut = pyqtSignal([str, list])
+    sin_out = pyqtSignal([str, list])
 
     def __init__(self, plugin_info, parent, config: APIConfig, text, token):
         super(AsyncSuggestThread, self).__init__(parent)
@@ -61,7 +61,7 @@ class AsyncSuggestThread(QThread):
 
     def run(self):
         cache[self.config.key] = get_sections(self.config)
-        self.sinOut.emit(self.token, build_result(self.plugin_info, self.config, self.text))
+        self.sin_out.emit(self.token, build_result(self.plugin_info, self.config, self.text))
 
 
 class APIDocPlugin(AbstractPlugin, SettingInterface, I18nInterface):
