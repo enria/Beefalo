@@ -12,7 +12,7 @@
   "plugins_dir": "plugins",
   "language": "zh",
   "exclude_plugin_dir": [
-    "setting"
+    "qr_code","api_doc"
   ],
-  "start_show":false
+  "start_show":true
 }
