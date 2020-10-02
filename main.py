@@ -13,7 +13,7 @@ from PyQt5.QtMultimedia import QMediaPlayer
 from win32process import SuspendThread, ResumeThread
 
 from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
-from PyQt5.QtGui import QCursor, QKeySequence, QIcon
+from PyQt5.QtGui import QCursor, QKeySequence, QIcon, QFontDatabase
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction, QProgressBar)
 
@@ -22,7 +22,7 @@ from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo,
 
 from keyboard import Hotkey
 from result_list import ResultListModel, WidgetDelegate
-from gui_size import WindowSize, ItemSize
+from gui_size import WindowSize, ItemSize, SizeScale
 
 # load plugin api from folder.
 # For plugin development, just need to add the plugin api folder to path.
@@ -38,16 +38,19 @@ class BeefaloWidget(QWidget, SettingInterface):
         super().__init__()
         self.app = root_app
 
+        QFontDatabase.addApplicationFont("resources/fontawesome-regular.ttf")
+
         # define ui widgets
         self.result_model = ResultListModel(self)
         self.result_model.sin_out.connect(self.adjust_size)
         self.ws_listview = QListView()
         self.ws_progress_bar = QProgressBar()
         self.progress_cnt = 0
+        self.screen_no = -1
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
-        self.m_size = WindowSize()
-        self.delegate = WidgetDelegate(self.result_model, ItemSize())
+        self.m_size = None
+        self.delegate = WidgetDelegate(self.result_model, None)
         self.theme = {}
         self.instant = False
 
@@ -55,6 +58,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.add_global_hotkey()
 
         # load plugins
+        self.api = None
         self.plugins = {"*": []}
         self.plugin_types = []
         self.setting_plugins = []
@@ -68,7 +72,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.debounce_thread.start()
 
         self.result_size = min(10, max(4, self.get_setting("result_size")))
-        self.result_item_height = self.delegate.i_size.height
+        self.result_item_height = 0
         self.init_ui()
 
     def play_media(self, media_content):
@@ -92,16 +96,16 @@ class BeefaloWidget(QWidget, SettingInterface):
                     except BaseException as e:
                         pass
 
-        api = ContextApi(self.set_input_text, sys_tray.showMessage,
-                         self.change_theme, self.plugin_types,
-                         self.get_theme,
-                         self.async_change_result, self.change_selected_result,
-                         self.start_progress, self.end_progress,
-                         self.play_media,
-                         self.setting_plugins, self.get_setting("language"))
+        self.api = ContextApi(self.set_input_text, sys_tray.showMessage,
+                              self.change_theme, self.plugin_types,
+                              self.get_theme,
+                              self.async_change_result, self.change_selected_result,
+                              self.start_progress, self.end_progress,
+                              self.play_media,
+                              self.setting_plugins, self.get_setting("language"), None)
 
         for plugin_type in self.plugin_types:
-            plugin = plugin_type(api)
+            plugin = plugin_type(self.api)
             if SettingInterface in inspect.getmro(plugin_type) and plugin.edit:
                 self.setting_plugins.append(plugin)
             # log.info("插件初始化：{}".format(plugin.meta_info.name))
@@ -116,24 +120,22 @@ class BeefaloWidget(QWidget, SettingInterface):
                 self.plugins["*"].append(plugin)
 
     def init_ui(self):
-        self.setGeometry(0, 0, self.m_size.main_width,
-                         self.m_size.editor_height + self.m_size.main_padding[1] * 2
-                         + self.result_item_height * (self.result_size + 2))
+
         self.setWindowTitle('Beefalo')
 
         # make the main window's position center
-        qr = self.frameGeometry()
-        cp = QDesktopWidget().availableGeometry().center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
-        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
+        # qr = self.frameGeometry()
+        # cp = QDesktopWidget().availableGeometry().center()
+        # qr.moveCenter(cp)
+        # self.move(qr.topLeft())
+        # self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
         vly = QVBoxLayout()
         font = self.ws_input.font()
         font.setFamily("微软雅黑")
-        font.setPointSize(self.m_size.editor_font_size)  # change it's size
+        # font.setPointSize(self.m_size.editor_font_size)  # change it's size
         self.ws_input.setFont(font)
-        self.ws_input.setFixedHeight(self.m_size.editor_height)
+        # self.ws_input.setFixedHeight(self.m_size.editor_height)
         self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handle_text_changed)
         self.ws_input.returnPressed.connect(self.handle_result_triggered)
@@ -142,7 +144,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_progress_bar.setMinimum(0)
         self.ws_progress_bar.setVisible(False)
         self.ws_progress_bar.setObjectName("QueryProgressBar")
-        self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
+        # self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
         sp_retain = self.ws_progress_bar.sizePolicy()
         sp_retain.setRetainSizeWhenHidden(True)
         self.ws_progress_bar.setSizePolicy(sp_retain)
@@ -160,19 +162,13 @@ class BeefaloWidget(QWidget, SettingInterface):
         vly.addWidget(self.ws_input)
         vly.addWidget(self.ws_progress_bar)
         vly.addWidget(self.ws_listview)
-        vly.setContentsMargins(self.m_size.main_padding[0],
-                               self.m_size.main_padding[1],
-                               self.m_size.main_padding[0],
-                               0)
         vly.setSpacing(0)
         vly.setAlignment(Qt.AlignTop)
         self.setLayout(vly)
         self.setWindowFlag(Qt.ToolTip)
         self.setObjectName("MainWidget")
-        self.adjust_size()
-        if self.get_setting("start_show"):    
-            self.show()
-            self.activateWindow()
+        if self.get_setting("start_show"):
+            self.change_visible()
 
     def start_progress(self):
         self.ws_progress_bar.setVisible(True)
@@ -236,9 +232,47 @@ class BeefaloWidget(QWidget, SettingInterface):
             if not keep:
                 self.clear_input_result()
         else:
+            self.change_screen()
+            self.setVisible(True)
             self.activateWindow()
             self.ws_input.setFocus()
-            self.setVisible(True)
+
+    def change_screen(self):
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        if screen == self.screen_no:
+            return
+        screen_rect = QApplication.desktop().screenGeometry(screen)
+        size_scale = SizeScale((screen_rect.width(), screen_rect.height()))
+        self.api.size_scale = size_scale
+        self.m_size = WindowSize(size_scale)
+        self.delegate.i_size = ItemSize(size_scale)
+        self.result_item_height = self.delegate.i_size.height
+        self.setGeometry(0, 0, self.m_size.main_width,
+                         self.m_size.editor_height + self.m_size.main_padding[1] * 2
+                         + self.result_item_height * (self.result_size + 4))
+
+        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2
+                            + self.result_item_height * (self.result_size + 2))
+        font = self.ws_input.font()
+        # font.setPointSize(self.m_size.editor_font_size)  # change it's size
+        font.setPixelSize(self.m_size.editor_font_size)
+        self.ws_input.setFont(font)
+        self.ws_input.setFixedHeight(self.m_size.editor_height)
+
+        self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
+
+        self.layout().setContentsMargins(self.m_size.main_padding[0],
+                                         self.m_size.main_padding[1],
+                                         self.m_size.main_padding[0],
+                                         0)
+
+        qr = self.frameGeometry()
+        cp = QApplication.desktop().screenGeometry(screen).center()
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+        self.screen_no = screen
+        self.adjust_size()
+        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
     def set_input_text(self, text):
         # if the text is the same to the origin, it's called by plugin too refresh result list
@@ -340,7 +374,6 @@ class BeefaloWidget(QWidget, SettingInterface):
                 self.change_visible()
             if action.method:
                 action.method(*action.args)
-
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:

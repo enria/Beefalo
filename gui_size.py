@@ -1,43 +1,54 @@
-size_base=2
-font_size_base=1
+size_base = 1
+font_size_base = 1
+
+
+class SizeScale(object):
+    def __init__(self, screen_pix):
+        base_size = (1920, 1080)
+        self.g = max(screen_pix[0] / base_size[0], screen_pix[1] / base_size[1])
+        self.f = self.g
+
 
 class WindowSize(object):
-    def __init__(self):
+    def __init__(self, size_scale: SizeScale):
         # TODO high dip
-        self.main_width = 800*size_base
-        self.main_padding = (8*size_base, 10*size_base)
+        s = size_scale
+        self.main_width = 800 * s.g
+        self.main_padding = (8 * s.g, 10 * s.g)
 
-        self.editor_height = 48*size_base
-        self.editor_font_size = 21*font_size_base
+        self.editor_height = 48 * s.g
+        self.editor_font_size = 30 * s.f
 
-        self.result_margin_top = 10*size_base
+        self.result_margin_top = 10 * s.g
 
 
 class ItemSize(object):
-    def __init__(self):
-        self.height = 48*size_base
-        self.width = 100*size_base
+    def __init__(self, size_scale: SizeScale):
+        s = size_scale
 
-        self.icon_size = (32*size_base, 32*size_base)
-        self.icon_margin = (8*size_base, 8*size_base)
+        self.height = 48 * s.g
+        self.width = 100 * s.g
+
+        self.icon_size = (32 * s.g, 32 * s.g)
+        self.icon_margin = (8 * s.g, 8 * s.g)
 
         # main title
-        self.font_size = 12*font_size_base
+        self.font_size = 18 * s.f
         self.font_weight = 60
-        self.title_height = 24*size_base
-        self.title_margin = (self.height, 4*size_base)
+        self.title_height = 24 * s.g
+        self.title_margin = (self.height, 4 * s.g)
 
         # subtitle
-        self.sub_font_size = 9*font_size_base
-        self.sub_title_height = 16*size_base
+        self.sub_font_size = 12 * s.f
+        self.sub_title_height = 16 * s.g
 
         # menu drop icon
-        self.drop_size = (24*size_base, 24*size_base)
-        self.drop_margin = (12*size_base, 12*size_base)
+        self.drop_size = (24 * s.g, 24 * s.g)
+        self.drop_margin = (12 * s.g, 12 * s.g)
 
         # menu item
-        self.menu_height = 24*size_base
-        self.menu_left_margin = 6*size_base
+        self.menu_height = 24 * s.g
+        self.menu_left_margin = 6 * s.g
 
 
 class GuiSize(object):

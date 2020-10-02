@@ -149,11 +149,11 @@ class WidgetDelegate(QAbstractItemDelegate):
 
         font = QFont()
         font.setFamilies(["微软雅黑", "FontAwesome"])
-        font.setPointSize(self.i_size.font_size)
+        font.setPixelSize(self.i_size.font_size)
         font.setWeight(self.i_size.font_weight)
         sub_font = QFont()
         sub_font.setFamilies(font.families())
-        sub_font.setPointSize(self.i_size.sub_font_size)
+        sub_font.setPixelSize(self.i_size.sub_font_size)
 
         title = index.data().title
         sub_title = index.data().subTitle
@@ -161,7 +161,8 @@ class WidgetDelegate(QAbstractItemDelegate):
 
         plugin_path = index.data().plugin_info.path
         if isinstance(index.data().icon, QIcon):
-            icon = index.data().icon
+            pm = index.data().icon.pixmap(QSize(icon_size.width(), icon_size.height()))
+            icon = QIcon(pm)
         else:
             if index.data().root:
                 pm = QPixmap(index.data().icon)

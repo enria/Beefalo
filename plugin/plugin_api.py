@@ -9,7 +9,7 @@ from functools import wraps
 class ContextApi:
     def __init__(self, change_query, show_message, change_theme, plugin_types,
                  get_theme, change_results, change_selected_result, start_progress, end_progress, play_media,
-                 setting_plugins, language):
+                 setting_plugins, language, size_scale):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
@@ -23,6 +23,7 @@ class ContextApi:
         self.setting_plugins = setting_plugins
         self.edit_setting = None
         self.language = language
+        self.size_scale = size_scale
 
 
 class PluginInfo(object):
@@ -93,7 +94,8 @@ class SingleLogger(object):
     log = logging.getLogger("Beefalo")
     log.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(plugin_name)s - %(levelname)s - %(message)s")
-    log_file_handler = TimedRotatingFileHandler(filename="log/Beefalo.log", when="D", encoding="utf-8")
+    log_file_handler = TimedRotatingFileHandler(filename="{}/Beefalo/log/Beefalo.log".format(os.environ['APPDATA']),
+                                                when="D", encoding="utf-8")
     log_file_handler.setFormatter(formatter)
     log_file_handler.setLevel(logging.INFO)
     log.addHandler(log_file_handler)
