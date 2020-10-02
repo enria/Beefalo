@@ -13,6 +13,7 @@ from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 class TipsPlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("Tips", "记录想法，支持多个文件。 ", "images/ssj_icon.png",
                            ["tip"], False)
+    tip_pattern = r"\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})]\s(.*)"
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
@@ -39,9 +40,9 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
         else:
             tip = text
         doc_matchs, total_match = [], False
-        docs=[path.name \
-            for path in sorted(Path(self.doc_root).iterdir(), key=os.path.getmtime,reverse=True)\
-            if not path.is_dir() and path.name.endswith(".md")]
+        docs = [path.name \
+                for path in sorted(Path(self.doc_root).iterdir(), key=os.path.getmtime, reverse=True) \
+                if not path.is_dir() and path.name.endswith(".md")]
         if doc_search:
             search_lower = doc_search.lower()
             for doc in docs:
@@ -65,7 +66,7 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                 with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
                     for line in doc.readlines():
                         if line.strip():
-                            item_match = re.match(r"\[(\d{4}-\d{2}-\d{2}\s\d{2}:\d{2}:\d{2})]\s(.*)", line)
+                            item_match = re.match(self.tip_pattern, line)
                             if item_match:
                                 copy_action = CopyAction(item_match.groups()[1])
                                 item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
@@ -105,6 +106,19 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
                     to_query = "{} {}::".format(keyword, str(doc[:-3]))
                 action = ResultAction(self.appendDoc, not multi, doc, t_tip, to_query)
                 results.append(ResultItem(self.meta_info, doc, tip, "images/ssj_choose.png", action))
+
+            if total_match:
+                with open(os.path.join(self.doc_root, doc_search + ".md"), "r", encoding="utf-8") as doc:
+                    for line in doc.readlines():
+                        if line.strip():
+                            item_match = re.match(self.tip_pattern, line)
+                            if item_match and tip.lower() in item_match.groups()[1].lower():
+                                item = ResultItem(self.meta_info, item_match.groups()[1], item_match.groups()[0],
+                                                  "images/ssj_item.png")
+                                copy_action = CopyAction(item_match.groups()[1])
+                                delete_action = ResultAction(self.deleteTip, False, doc_search + ".md", line)
+                                item.menus = [MenuItem(" 复制", copy_action), MenuItem("️ 删除", delete_action)]
+                                results.append(item)
 
         return results
 
