@@ -20,6 +20,12 @@ class CalculatorPlugin(AbstractPlugin, I18nInterface):
 
     def query(self, keyword, text, token=None, parent=None):
         try:
+            float(text)
+            return []
+        except BaseException as e:
+            pass
+            
+        try:
             value = eval(text, self.math_func, {})
             if not callable(value):
                 return [
