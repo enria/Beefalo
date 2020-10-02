@@ -8,7 +8,7 @@ from PyQt5.QtCore import QThread, pyqtSignal, QUrl
 from PyQt5.QtMultimedia import QSound, QMediaPlayer, QMediaContent
 
 from plugin_api import PluginInfo, ContextApi, AbstractPlugin, get_logger
-from result_model import ResultItem, ResultAction
+from result_model import ResultItem, ResultAction, MenuItem
 
 log = get_logger("在线词典")
 
@@ -48,6 +48,8 @@ class YoudaoApiThread(QThread):
         self.plugin_info = plugin_info
         self.api = api
 
+        self.word_file="word.txt"
+
     def run(self):
         t = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
         salt = str(uuid.uuid1())
@@ -82,10 +84,16 @@ class YoudaoApiThread(QThread):
 
                 if apiResp["basic"].get("explains"):
                     for exp in apiResp["basic"]["explains"]:
-                        results.append(DictResultItem(self.plugin_info, exp, self.text, "translate"))
+                        item=DictResultItem(self.plugin_info, exp, self.text, "translate")
+                        item.menus=[MenuItem(" 加入到生词本",ResultAction(self.add_word,True,self.text,exp))]
+                        results.append(item)
             self.sin_out.emit(self.token, results)
         except BaseException as e:
             log.error(e)
+    
+    def add_word(self,word,exp):
+        with open(os.path.join(self.plugin_info.path,self.word_file),"a",encoding="utf-8") as word_file:
+            word_file.write("{}\t{}\n".format(word,exp))
 
 
 class TranslatePlugin(AbstractPlugin):
