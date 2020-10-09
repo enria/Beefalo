@@ -94,7 +94,7 @@ class SingleLogger(object):
     log = logging.getLogger("Beefalo")
     log.setLevel(logging.INFO)
     formatter = logging.Formatter("%(asctime)s - %(plugin_name)s - %(levelname)s - %(message)s")
-    log_file_handler = TimedRotatingFileHandler(filename="{}/Beefalo/log/Beefalo.log".format(os.environ['APPDATA']),
+    log_file_handler = TimedRotatingFileHandler(filename="./log/Beefalo.log"),
                                                 when="D", encoding="utf-8")
     log_file_handler.setFormatter(formatter)
     log_file_handler.setLevel(logging.INFO)
