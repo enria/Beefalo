@@ -1,8 +1,4 @@
-posit	vt. 安置；假定
-contribution	n. 贡献；捐献；投稿
-predicate	n. 谓语，述语
 Infrastructure 	n. 基础设施；公共建设；下部构造
-initiative	n. 主动权；首创精神；新方案；倡议
 phase	n. 月相；时期，阶段
 methodology	n. 方法学，方法论
 investigations	n. 调查（investigation的复数）
@@ -36,3 +32,137 @@ downsampling	缩减像素采样
 eigenvalue	n. [数] 特征值
 equivalent	n. 对等的人（或事物）；当量
 parametric	adj. [数][物] 参数的；[数][物] 参量的
+finegrain	n. 细晶粒；细致纹理
+incorporate	vt. 包含，吸收；体现；把……合并
+tune	vt. 调整；使一致；为…调音
+Momentum 	n. 势头；[物] 动量；动力；冲力
+differentiation	n. 变异，[生物] 分化；区别
+acyclic 	adj. 非循环的；[物] 非周期的
+derivative	n. 派生物；金融衍生产品；派生词；（化学）衍生物；导数
+glimpse	n. 一瞥，一看
+affine	adj. （数） 仿射的
+recap	vt. 翻新胎面；扼要重述
+encapsulating 	n. 封装；[电] 包封
+Under the hood	在引擎盖下面；在底层；在后台
+primitive 	adj. 原始的，远古的；简单的，粗糙的
+eager	adj. 渴望的；热切的；热心的
+convolve	v. 使卷曲，使缠绕；卷积
+condense	vi. 浓缩；凝结
+handful	n. 少数；一把；棘手事
+disentanglement	n. 解开纠结
+boilerplate	n. 样板文件；引用
+asynchronous	adj. [电] 异步的；不同时的；不同期的
+intensity	n. 强度；强烈；[电子] 亮度；紧张
+hyperbolic	adj. 双曲线的；夸张的
+deterministic	adj. 确定性的；命运注定论的
+restriction	n. 限制；约束；束缚
+proximity	n. 接近，[数]邻近；接近；接近度，距离；亲近
+spectral	adj. [光] 光谱的；幽灵的；鬼怪的
+asymmetric	adj. 不对称的；非对称的
+factorize	vt. 因式分解；把复杂计算分解为基本运算
+prohibitive	adj. 禁止的，禁止性的；抑制的；（费用，价格等）过高的；类同禁止的
+truncated	adj. 缩短了的；被删节的；切去顶端的
+isomorphism	n. 类质同像，[物化] 类质同晶；同形
+dissimilarity	n. 不同，相异；相异点
+staleness	n. 腐败；陈腐；不新鲜；泄气
+incorporate	vi. 合并；混合；组成公司
+coefficient	n. [数] 系数；率；协同因素
+polynomial	adj. 多项的，多词的；多项式的
+perturbation	n. [数][天] 摄动；不安；扰乱
+discretizing	离散化（discretize的现在分词）
+differentiable	adj. [数] 可微的；可辨的；可区分的
+observe	vt. 观察；遵守；说；注意到；评论
+interpretations	n. [计] 解释
+trivial	adj. 不重要的，琐碎的；琐细的
+reifying	v. 使（抽象概念）具体化
+transduction	n. [遗] 转导；转换；换能；变频
+dispensing	n. 配药；调剂
+parallelizable	adj. [数] 可平行的
+fraction	n. 分数；部分；小部分；稍微
+constituency	n. （选区的）选民；支持者；（一批）顾客
+factor	vt. 把…作为因素计入；代理经营；把…分解成
+inherently	adv. 内在地；固有地；天性地
+precludes	vt. 排除；妨碍；阻止
+factorization	n. [数] 因子分解；[数] 因式分解
+integral	adj. 积分的；完整的，整体的；构成整体所必须的
+eschewing	vt. 避免；避开；远避
+arbitrary	adj. [数] 任意的；武断的；专制的
+counteract	vt. 抵消；中和；阻碍
+entailment	n. （不动产）继承人之限制；需要
+motivate	v. 刺激，使有动机，激发…的积极性；成为……的动机；给出理由；申请
+residual	n. 剩余物，残渣；残差，剩余误差；（付给表演者的）复播追加酬金；（地质）残丘，蚀余山；（新车购入一定时间后的）转售值
+multiplicative	adj. [数] 乘法的；增加的
+magnitude	n. 大小；量级；[地震] 震级；重要；光度
+mimics	vt. 模仿，摹拟（mimic 的第三人称单数）
+sinusoid	n. 正弦曲线
+extrapolate	vt. 外推；推断
+traverse	v. 穿过；来回移动；反驳；阻挠；详细研究；旋转
+regime	n. 政权，政体；社会制度；管理体制
+perplexity,	n. 困惑；混乱
+constituency	n. （选区的）选民；支持者；（一批）顾客
+transduction	n. [遗] 转导；转换；换能；变频
+modalities	n. 形式；形态（modality的复数）；样式
+Semantics	n. [语] 语义学；语义论
+retrieval	n. 检索；恢复；取回；拯救
+contrastive	adj. 对比的
+salient	adj. 显著的；突出的；跳跃的
+Ambiguity	n. 含糊；不明确；暧昧；模棱两可的话
+inevitably	adv. 不可避免地；必然地
+aforementioned	adj. 上述的；前面提及的
+perceive	vt. 察觉，感觉；理解；认知
+discrete	adj. 离散的，不连续的
+empirical	adj. 经验主义的，完全根据经验的；实证的
+off-the-shelf	adj. 现成的；常备的；成品的
+beige	adj. 米黄色的；无特色的
+seminal	adj. 有创造力的，对未来有影响的；重大的；种子的；精液的；生殖的
+refine	vt. 精炼，提纯；改善；使…文雅
+Genome	n. 基因组；染色体组
+predicate	adj. 谓语的，述语的
+orthogonal	adj. [数] 正交的；直角的
+confuse	vt. 使混乱；使困惑
+permeate	vt. 渗透，透过；弥漫
+skewed	adj. 歪斜的；曲解的
+counterfactual	adj. 反事实的
+causality	n. 因果关系
+crux	n. 关键，症结；难题；十字架形，坩埚
+endogenous	adj. [生物] 内生的；内因性的
+ambidextrous	adj. 双手灵巧的；怀有二心的
+analogous	adj. 类似的；[昆] 同功的；可比拟的
+profound	adj. 深厚的；意义深远的；渊博的
+alternate	n. 替换物，代理人
+investigated	adj. 研究的；调查的
+elaborately	adv. 精巧地；苦心经营地
+curriculum	n. 课程；总课程
+disentangling	v. 松开，解开；使解脱；理顺（disentangle 的现在分词）
+Mediation	n. 调解；仲裁；调停
+endow	vt. 赋予；捐赠；天生具有
+deliberately	adv. 故意地；缓慢而谨慎地
+manipulates	vt. 操纵；操作；巧妙地处理；篡改
+prunes	v. 砍掉；修剪（prune的第三人称单数形式）
+impose	vi. 利用；欺骗；施加影响
+quantitative	adj. 定量的；量的，数量的
+tentative	n. 假设，试验
+notation	n. 符号；乐谱；注释；记号法
+hereinafter	adv. （正式声明、文件等中）在下文中（等于 hereafter）
+subtraction	n. [数] 减法；减少；差集
+interventional	介入性
+spontaneously	adv. 自发地；自然地；不由自主地
+causal	adj. 因果关系的；有原因的
+dummy	adj. 假的，仿真的
+intervened	干涉
+stimuli	n. 刺激；刺激物；促进因素（stimulus的复数）
+mediator	n. 调停者；传递者；中介物
+diagnosis	n. 诊断
+focal	adj. 焦点的，在焦点上的；灶的，病灶的
+discriminative	adj. 区别的，歧视的；有识别力的
+skewed	adj. 歪斜的；曲解的
+structural	adj. 结构的；建筑的
+asymmetric	adj. 不对称的；非对称的
+devising	发明
+staging	v. 表演；展现；分阶段进行；筹划（stage的ing形式）
+establishes	建立
+proofreading	v. 校对（proofread 的现在分词）
+incredible	adj. 不能相信的，难以置信的；极好的，极大的
+posit	n. 假设；设想
+slant	v. 倾斜；斜射；使倾斜；有偏向地报道；有倾向；使倾向于
+induction	n. [电磁] 感应；归纳法；感应现象；入门培训，入职仪式，就职；诱导

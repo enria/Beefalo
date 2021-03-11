@@ -131,6 +131,8 @@ def everything_query(root, text, query_max, plugin_info, i18n, api, system_icon)
     if query_max:
         everything_dll.Everything_SetMax(query_max)
     everything_dll.Everything_QueryW(True)
+    # everything_dll.Everything_SetMatchPath(True)
+    # everything_dll.Everything_SetRegex(True)
     num_results = everything_dll.Everything_GetNumResults()
     fullPath = ctypes.create_unicode_buffer(500)
     results = []

@@ -6,7 +6,8 @@
     "alt+D": "dict ",
     "alt+T": "todo ",
     "alt+G": "ghb ",
-    "alt+Q": "qrc "
+    "alt+Q": "qrc ",
+    "alt+B": "baidu "
   },
   "result_size": 6,
   "plugins_dir": "plugins",
@@ -14,5 +15,5 @@
   "exclude_plugin_dir": [
     "qr_code","api_doc"
   ],
-  "start_show":true
+  "start_show":false
 }

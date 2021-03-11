@@ -48,8 +48,6 @@ class YoudaoApiThread(QThread):
         self.plugin_info = plugin_info
         self.api = api
 
-        self.word_file="word.txt"
-
     def run(self):
         t = int((datetime.utcnow() - datetime(1970, 1, 1)).total_seconds())
         salt = str(uuid.uuid1())
@@ -92,13 +90,14 @@ class YoudaoApiThread(QThread):
             log.error(e)
     
     def add_word(self,word,exp):
-        with open(os.path.join(self.plugin_info.path,self.word_file),"a",encoding="utf-8") as word_file:
+        with open(os.path.join(self.plugin_info.path,TranslatePlugin.word_file),"a",encoding="utf-8") as word_file:
             word_file.write("{}\t{}\n".format(word,exp))
 
 
 class TranslatePlugin(AbstractPlugin):
     meta_info = PluginInfo("在线词典", "使用有道云接口的在线典", "images/dict_basic.png",
                            ["dict"], True)
+    word_file="word.txt"
 
     def __init__(self, api: ContextApi):
         # threading.Thread(target=self.loadDict).start()
@@ -116,6 +115,29 @@ class TranslatePlugin(AbstractPlugin):
                     else:
                         self.localDict[ori] = [tra]
 
+    def show_word(self,refresh=False):
+        results=[]
+        with open(os.path.join(self.meta_info.path,self.word_file),encoding="utf-8") as word_file:
+            for line_no,line in enumerate(word_file.readlines()):
+                word,explain=line.strip().split("\t")
+                item=ResultItem(self.meta_info,title=word,subTitle=explain,icon="images/dict_translate.png")
+                item.menus=[MenuItem("️ 删除", ResultAction(self.delete_word,False, line,line_no))]
+                results.append(item)
+        self.api.change_results(results[::-1],refresh)
+    
+    def delete_word(self,line,line_no):
+        results=[]
+        with open(os.path.join(self.meta_info.path,self.word_file),encoding="utf-8") as word_file:
+            lines=word_file.readlines()
+        # _,lines=zip(*filter(lambda lo,l: not (lo==line_no and l==line), enumerate(lines)))
+        with open(os.path.join(self.meta_info.path,self.word_file),"w",encoding="utf-8") as word_file:
+            for lo,l in enumerate(lines):
+                if lo==line_no and line==l:
+                    continue
+                else:
+                    word_file.write(l)
+        self.show_word(True)
+
     def query(self, keyword, text, token=None, parent=None):
         if len(text.strip()):
             results = []
@@ -124,4 +146,4 @@ class TranslatePlugin(AbstractPlugin):
                     results.append(DictResultItem(self.meta_info, translation, text, "translate"))
             return results, YoudaoApiThread(self.meta_info, parent, self.api, text, token)
         else:
-            return [], None
+            return [ResultItem(self.meta_info,title="查看生词本",icon="images/dict_basic.png",action=ResultAction(self.show_word,False))], None

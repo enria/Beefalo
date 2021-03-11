@@ -275,7 +275,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
     def set_input_text(self, text):
-        # if the text is the same to the origin, it's called by plugin too refresh result list
+        # if the text is the same to the origin, it's called by plugin to refresh result list
         # in this case we should cancel the input debounce and don't change the selected row (try to)
         # the 'instant' variable make sense in self.async_change_result, debounce thread and delegate
         if self.ws_input.text() == text:
@@ -284,9 +284,12 @@ class BeefaloWidget(QWidget, SettingInterface):
         else:
             self.ws_input.setText(text)
 
-        self.setVisible(True)
-        self.ws_input.activateWindow()
-        self.ws_input.setFocus()
+        if self.screen_no == -1:
+            self.change_visible()
+        else:
+            self.setVisible(True)
+            self.ws_input.activateWindow()
+            self.ws_input.setFocus()
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -295,8 +298,8 @@ class BeefaloWidget(QWidget, SettingInterface):
         if token == self.token:
             self.result_model.addItems(results)
 
-    def async_change_result(self, results):
-        self.result_model.changeItems(results, self.instant)
+    def async_change_result(self, results,instant=False):
+        self.result_model.changeItems(results, self.instant or instant)
         self.instant = False
         if self.result_model.select.row > -1:  # selected row may has been changed
             self.ws_listview.scrollTo(self.result_model.create_index())
@@ -420,7 +423,7 @@ class DebounceThread(QThread):
         while True:
             if not self.view.instant:
                 # sleep to debounce
-                time.sleep(0.1)
+                time.sleep(0.05)
             if self.work:
                 result = []
                 query = self.view.ws_input.text()
