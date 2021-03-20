@@ -1,1 +1,1 @@
-CreateObject("WScript.Shell").Run "cmd /c python C:\Users\zhangyd\source\Beefalo\beefalo.py",0
+CreateObject("WScript.Shell").Run "cmd /c python beefalo.py",0
