@@ -47,6 +47,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_progress_bar = QProgressBar()
         self.progress_cnt = 0
         self.screen_no = -1
+        self.screen_width= 0
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
         self.m_size = None
@@ -239,7 +240,8 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def change_screen(self):
         screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
-        if screen == self.screen_no:
+        screen_rect = QApplication.desktop().screenGeometry(screen)
+        if screen == self.screen_no and screen_rect.width==self.screen_width:
             return
         screen_rect = QApplication.desktop().screenGeometry(screen)
         size_scale = SizeScale((screen_rect.width(), screen_rect.height()))
@@ -271,6 +273,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         qr.moveCenter(cp)
         self.move(qr.topLeft())
         self.screen_no = screen
+        self.screen_width= screen_rect.width
         self.adjust_size()
         self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
