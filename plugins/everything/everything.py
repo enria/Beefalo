@@ -8,10 +8,14 @@ from pathlib import Path
 import win32com.client
 import pythoncom
 
+import win32gui
+import win32ui
+
 from PyQt5 import QtCore
 from PyQt5.QtCore import QThread, pyqtSignal, QFileInfo
 from PyQt5.QtGui import QIcon, QGuiApplication
 from PyQt5.QtWidgets import QFileIconProvider
+from PyQt5.QtWinExtras import QtWin
 
 from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi, get_logger, I18nInterface
@@ -42,10 +46,32 @@ def copy_file(file_name):
 @lru_cache(maxsize=512)
 def get_link_target(link_file):
     ws = win32com.client.Dispatch("wscript.shell")
-    scut = ws.CreateShortcut(link_file)
-    if scut.TargetPath:
-        return QFileIconProvider().icon(QFileInfo(scut.TargetPath))
-    return os.path.join("images", "icons", file_icons.get("lnk") + ".svg")
+    shortcut = ws.CreateShortcut(link_file)
+    # print(scut.iconlocation,"========",scut.TargetPath)
+    # if scut.TargetPath:
+    #     return QFileIconProvider().icon(QFileInfo(scut.TargetPath))
+    # return os.path.join("images", "icons", file_icons.get("lnk") + ".svg")
+
+    iconPath, iconId = shortcut.iconLocation.split(',')
+    iconId = int(iconId)
+    if not iconPath:
+        iconPath = shortcut.targetPath
+    iconPath = os.path.expandvars(iconPath)
+    if not iconId:
+        return QIcon(QFileIconProvider().icon(QFileInfo(iconPath)))
+
+    iconRes = win32gui.ExtractIconEx(iconPath, iconId)
+    hdc = win32ui.CreateDCFromHandle(win32gui.GetDC(0))
+    hbmp = win32ui.CreateBitmap()
+    # I think there's a way to find available icon sizes, I'll leave it up to you
+    hbmp.CreateCompatibleBitmap(hdc,64,64)
+    hdc = hdc.CreateCompatibleDC()
+    hdc.SelectObject(hbmp)
+    hdc.DrawIcon((0, 0), iconRes[0][0])
+    hdc.DeleteDC()
+    # the original QtGui.QPixmap.fromWinHBITMAP is now part of the
+    # QtWin sub-module
+    return QIcon(QtWin.fromHBITMAP(hbmp.GetHandle(), 2))
 
 
 class FileResultItem(ResultItem):

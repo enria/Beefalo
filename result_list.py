@@ -3,7 +3,7 @@ import os
 from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal, QRectF
 from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
 from PyQt5.QtSvg import QSvgRenderer
-from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate
+from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate,QToolTip
 
 from result_model import ResultItem
 
@@ -215,3 +215,17 @@ class WidgetDelegate(QAbstractItemDelegate):
         if index and index.row() == self.model.select.row and self.model.select.expand:
             height += self.i_size.menu_height * len(index.data().menus)
         return QSize(self.i_size.width, height)
+    
+    def helpEvent(self, ev, view, option, index):
+        # Show a tooltip only if the item is truncated
+        if not ev or not view:
+            return False
+        if ev.type() == ev.ToolTip:
+            rect = view.visualRect(index)
+            size = self.sizeHint(option, index)
+            item=index.data(Qt.DisplayRole)
+            tooltip = f"{item.title}\n\n{item.subTitle}"
+            QToolTip.showText(ev.globalPos(), tooltip, view)
+            return True
+        return QStyledItemDelegate.helpEvent(self, ev, view, option, index)
+
