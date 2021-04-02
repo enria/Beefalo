@@ -1,0 +1,10 @@
+{
+  "ides": [
+    {
+      "name": "Visual Studio Code",
+      "keyword":"vsc",
+      "script": "vsc_workspace.py",
+      "icon": "images/vscode.png"
+    }
+  ]
+}

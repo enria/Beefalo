@@ -217,15 +217,16 @@ class WidgetDelegate(QAbstractItemDelegate):
         return QSize(self.i_size.width, height)
     
     def helpEvent(self, ev, view, option, index):
-        # Show a tooltip only if the item is truncated
+        return QStyledItemDelegate.helpEvent(self, ev, view, option, index) # tooltip 感觉没什么用
         if not ev or not view:
             return False
         if ev.type() == ev.ToolTip:
             rect = view.visualRect(index)
             size = self.sizeHint(option, index)
-            item=index.data(Qt.DisplayRole)
-            tooltip = f"{item.title}\n\n{item.subTitle}"
-            QToolTip.showText(ev.globalPos(), tooltip, view)
-            return True
+            if rect.width() < size.width():
+                item=index.data(Qt.DisplayRole)
+                tooltip = f"{item.title}\n\n{item.subTitle}"
+                QToolTip.showText(ev.globalPos(), tooltip, view)
+                return True
         return QStyledItemDelegate.helpEvent(self, ev, view, option, index)
 
