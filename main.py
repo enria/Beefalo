@@ -338,12 +338,21 @@ class BeefaloWidget(QWidget, SettingInterface):
     def selected_page_up(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_selected(self.result_model.create_index(-self.result_size))
+        if self.result_model.create_index().row()\
+            -self.result_size<0:
+            self.handle_result_selected(self.result_model.createIndex(0, 0))
+        else:
+            self.handle_result_selected(self.result_model.create_index(-self.result_size))
 
     def selected_page_down(self):
         if self.result_model.rowCount() == 0:
             return
-        self.handle_result_selected(self.result_model.create_index(self.result_size))
+        # page down 不需要循环
+        if self.result_model.create_index().row()\
+            +self.result_size>=self.result_model.rowCount():
+            self.handle_result_selected(self.result_model.createIndex(self.result_model.rowCount()-1, 0))
+        else:
+            self.handle_result_selected(self.result_model.create_index(self.result_size))
 
     def repaint_selected_item(self):
         # when change the selected row's style and display or hide it's menus
