@@ -87,7 +87,7 @@ class FileResultItem(ResultItem):
         if system_icon:
 
             if fileName.endswith(".url"):
-                self.icon = os.path.join("images", "icons", file_icons.get("url") + ".svg")
+                self.icon = os.path.join("images", "link.png")
             else:
                 icon_file_path = fullPath
                 if fileName.endswith(".lnk"):

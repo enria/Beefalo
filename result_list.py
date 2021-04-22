@@ -223,10 +223,9 @@ class WidgetDelegate(QAbstractItemDelegate):
         if ev.type() == ev.ToolTip:
             rect = view.visualRect(index)
             size = self.sizeHint(option, index)
-            if rect.width() < size.width():
-                item=index.data(Qt.DisplayRole)
-                tooltip = f"{item.title}\n\n{item.subTitle}"
-                QToolTip.showText(ev.globalPos(), tooltip, view)
-                return True
+            item=index.data(Qt.DisplayRole)
+            tooltip = f"{item.title}\n\n{item.subTitle}"
+            QToolTip.showText(ev.globalPos(), tooltip, view)
+            return True
         return QStyledItemDelegate.helpEvent(self, ev, view, option, index)
 
