@@ -9,7 +9,7 @@ from functools import wraps
 class ContextApi:
     def __init__(self, change_query, show_message, change_theme, plugin_types,
                  get_theme, change_results, change_selected_result, start_progress, end_progress, play_media,
-                 setting_plugins, language, size_scale):
+                 setting_plugins, language, size_scale,win_id):
         self.change_query = change_query
         self.show_message = show_message
         self.change_theme = change_theme
@@ -24,6 +24,7 @@ class ContextApi:
         self.edit_setting = None
         self.language = language
         self.size_scale = size_scale
+        self.win_id=win_id
 
 
 class PluginInfo(object):

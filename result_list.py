@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate,QToolTip
 from result_model import ResultItem
 
 from gui_size import ItemSize
+import re
 
 
 class ItemSelection(object):
@@ -115,6 +116,16 @@ DEFAULT_COLOR = {
     }
 }
 
+def rgba2qcolor(rgba:str):
+    rgba=rgba.replace(" ","")
+    rgba=list(re.match("rgba\((.+),(.+),(.+),(.+)\)",rgba).groups())
+    if rgba[-1].endswith("%"):
+        rgba[-1]=int(rgba[-1][:-1])/100*255
+    rgba=list(map(int, rgba))
+    return QColor(rgba[0],rgba[1],rgba[2],rgba[3])
+    
+    
+
 
 class WidgetDelegate(QAbstractItemDelegate):
 
@@ -138,8 +149,11 @@ class WidgetDelegate(QAbstractItemDelegate):
 
     def paint(self, painter, option, index):
         theme = self.theme["result"]
+        highlight_background=QColor(theme["highlight"]["background"]) \
+            if theme["highlight"]["background"].startswith("#") \
+            else rgba2qcolor(theme["highlight"]["background"])
         if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
-            background_brush = QBrush(QColor(theme["highlight"]["background"]), Qt.SolidPattern)
+            background_brush = QBrush(highlight_background, Qt.SolidPattern)
             painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), self.i_size.height), background_brush)
             if len(index.data().menus) and not self.model.select.expand:
                 render = self.get_menu_icon_data(self.theme["color"])
@@ -199,7 +213,7 @@ class WidgetDelegate(QAbstractItemDelegate):
                                   option.rect.top() + self.i_size.height + i * self.i_size.menu_height,
                                   option.rect.width() - self.i_size.height, self.i_size.menu_height)
                 if i == self.model.select.selected_menu:
-                    background_brush = QBrush(QColor(theme["highlight"]["background"]), Qt.SolidPattern)
+                    background_brush = QBrush(highlight_background, Qt.SolidPattern)
                     painter.fillRect(menu_rect, background_brush)
                     color = theme["highlight"]["color"]
                 painter.setFont(sub_font)
