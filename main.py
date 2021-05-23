@@ -17,6 +17,8 @@ from PyQt5.QtGui import QCursor, QKeySequence, QIcon, QFontDatabase
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
                              QSizePolicy, QSystemTrayIcon, QMenu, QAction, QProgressBar)
 
+os.chdir(os.path.dirname(os.path.abspath(__file__)))
+
 sys.path.append("plugin")
 from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
 
@@ -103,7 +105,7 @@ class BeefaloWidget(QWidget, SettingInterface):
                               self.async_change_result, self.change_selected_result,
                               self.start_progress, self.end_progress,
                               self.play_media,
-                              self.setting_plugins, self.get_setting("language"), None)
+                              self.setting_plugins, self.get_setting("language"), None,self.winId())
 
         for plugin_type in self.plugin_types:
             plugin = plugin_type(self.api)
@@ -168,8 +170,10 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.setLayout(vly)
         self.setWindowFlag(Qt.ToolTip)
         self.setObjectName("MainWidget")
+
         if self.get_setting("start_show"):
             self.change_visible()
+            
 
     def start_progress(self):
         self.ws_progress_bar.setVisible(True)
@@ -209,6 +213,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.setFixedHeight(actual_height)
 
     def change_theme(self, css, theme):
+
         self.setStyleSheet(css)
         self.theme = theme
         self.delegate.theme = theme
