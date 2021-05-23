@@ -1,0 +1,21 @@
+{
+    "aero":"000000AA",
+    "color": "#00cc6a",
+    "background": "transparent",
+    "editor": {
+            "background": "transparent",
+            "color": "#ffffff",
+            "border": "0px solid rgba(0,204,106, 10%)"
+    },
+    "result": {
+        "background": "transparent",
+        "normal": {
+            "color":"#ffffff"
+        },
+        "highlight": {
+            "background": "rgba(0,204,106, 30%)",
+            "color": "#ffffff"
+        },
+        "scroll": "rgba(0,204,106, 30%)"
+    }
+}

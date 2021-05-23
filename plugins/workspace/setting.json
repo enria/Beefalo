@@ -5,6 +5,12 @@
       "keyword":"vsc",
       "script": "vsc_workspace.py",
       "icon": "images/vscode.png"
+    },
+    {
+      "name": "Chrome Bookmarks",
+      "keyword":"chbm",
+      "script": "chrome_bookmarks.py",
+      "icon": "images/chrome.png"
     }
   ]
 }
