@@ -1,0 +1,10 @@
+{
+  "zh": {
+    "plugin_name": "Typewriter",
+    "plugin_desc": "打字练习插件"
+  },
+  "en": {
+    "plugin_name": "Typewriter",
+    "plugin_desc": "Typewriter"
+  }
+}
