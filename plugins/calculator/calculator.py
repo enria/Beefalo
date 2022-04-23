@@ -16,7 +16,7 @@ class CalculatorPlugin(AbstractPlugin, I18nInterface):
             attr_type = getattr(math, attr)
             if (callable(attr_type) or isinstance(attr_type, numbers.Number)) and not isclass(attr_type):
                 self.math_func[attr] = attr_type
-        self.math_func.update({"int": int, "hex": hex, "bin": bin, "oct": oct})
+        self.math_func.update({"int": int, "hex": hex, "bin": bin, "oct": oct, "len": len})
 
     def query(self, keyword, text, token=None, parent=None):
         try:

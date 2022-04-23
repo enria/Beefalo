@@ -166,3 +166,55 @@ incredible	adj. 不能相信的，难以置信的；极好的，极大的
 posit	n. 假设；设想
 slant	v. 倾斜；斜射；使倾斜；有偏向地报道；有倾向；使倾向于
 induction	n. [电磁] 感应；归纳法；感应现象；入门培训，入职仪式，就职；诱导
+empirical	adj. 经验主义的，完全根据经验的；实证的
+hold back	隐瞒；退缩；抑制；阻止
+pervasive	adj. 普遍的；到处渗透的；流行的
+drown out	淹没，压过
+unprecedented 	adj. 空前的；无前例的
+anticipation	n. 预料，预期；预感；预知；盼望，希望；先发制人
+embodiment	n. 体现；化身；具体化
+predating	vt. 在日期上早于（先于）
+distinction	n. 区别；差别；特性；荣誉、勋章
+abstraction	n. 抽象；提取；抽象概念；空想；心不在焉
+pervasive	adj. 普遍的；到处渗透的；流行的
+metaphor	n. 暗喻，隐喻；比喻说法
+factorization	n. [数] 因子分解；[数] 因式分解
+infer	vt. 推断；推论
+a long way off 	在远处
+draw on	利用；吸收；戴上；临近
+禁用	[计] forbidden
+pragmatics	n. 语用学；语用论
+lean in 	向前一步（书名，Lean In）
+interpolation	n. 插入；篡改；填写；插值
+adversarial	adj. 对抗的；对手的，敌手的
+disentangling	v. 松开，解开；使解脱；理顺（disentangle 的现在分词）
+maximal	adj. 最高的，最大的；最全面的
+disentangle	vt. 解开；松开；使解脱
+interwoven	v. 使交织，互相编织；使紧密结合（interweave 的过去分词）
+wire in 	努力工作；给…接上电源线
+bedrock	n. [地质] 基岩；根底；基本原理
+heterogeneous	adj. 由很多种类组成的，混杂的；各种各样的；（化学）不均一的，多相的；（数学）不纯一的，参差的
+compositionality	n. 语意合成性
+construal	n. 解释；说明
+interleave	v. 交错；插空白页于；插叙
+cortical	adj. 皮质的；[生物] 皮层的；外皮的
+consequently	adv. 因此；结果；所以
+complement	vt. 补足，补助
+mitigate	vt. 使缓和，使减轻
+comprises	vt. 包含；由…组成
+syntactic	adj. 句法的；语法的；依据造句法的
+indefinite	adj. 不确定的；无限的；模糊的
+focally	焦点地,有焦点地
+edifice	n. 大厦；大建筑物
+unprecedented	adj. 空前的；无前例的
+emulate	vt. 仿真；模仿；尽力赶上；同…竞争
+infeasible	adj. 不可实行的
+paraphrase	n. 释义；解释；意译
+glimpse	n. 一瞥，一看
+surveillance	n. 监督；监视
+preregistering	预寄存器
+unary	adj. [数] 一元的
+bismuth	n. [化学] 铋
+problematic	adj. 问题的；有疑问的；不确定的
+rigorously	adv. 严厉地；残酷地
+heuristic	adj. 启发式的；探索的

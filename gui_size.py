@@ -4,7 +4,7 @@ font_size_base = 1
 
 class SizeScale(object):
     def __init__(self, screen_pix):
-        base_size = (1920, 1080)
+        base_size = (1920/1.2, 1080/1.2)
         self.g = max(screen_pix[0] / base_size[0], screen_pix[1] / base_size[1])
         self.f = self.g
 

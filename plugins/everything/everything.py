@@ -45,6 +45,7 @@ def copy_file(file_name):
 
 @lru_cache(maxsize=512)
 def get_link_target(link_file):
+    # print(link_file)
     ws = win32com.client.Dispatch("wscript.shell")
     shortcut = ws.CreateShortcut(link_file)
     # print(scut.iconlocation,"========",scut.TargetPath)
@@ -58,6 +59,8 @@ def get_link_target(link_file):
         iconPath = shortcut.targetPath
     iconPath = os.path.expandvars(iconPath)
     if not iconId:
+        if iconPath.endswith(".ico"):
+            return QIcon(iconPath)
         return QIcon(QFileIconProvider().icon(QFileInfo(iconPath)))
 
     iconRes = win32gui.ExtractIconEx(iconPath, iconId)
@@ -85,7 +88,6 @@ class FileResultItem(ResultItem):
         self.subTitle = fullPath
 
         if system_icon:
-
             if fileName.endswith(".url"):
                 self.icon = os.path.join("images", "link.png")
             else:

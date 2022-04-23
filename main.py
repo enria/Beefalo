@@ -207,10 +207,10 @@ class BeefaloWidget(QWidget, SettingInterface):
         # TODO find more tricky method
         actual_height = min(height, max_height)
         if cnt:
-            self.ws_listview.setFixedHeight(actual_height - base_height - self.m_size.result_margin_top)
+            self.ws_listview.setFixedHeight(int(actual_height - base_height - self.m_size.result_margin_top))
         else:
-            self.ws_listview.setFixedHeight(actual_height - base_height)
-        self.setFixedHeight(actual_height)
+            self.ws_listview.setFixedHeight(int(actual_height - base_height))
+        self.setFixedHeight(int(actual_height))
 
     def change_theme(self, css, theme):
 
@@ -254,23 +254,23 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.m_size = WindowSize(size_scale)
         self.delegate.i_size = ItemSize(size_scale)
         self.result_item_height = self.delegate.i_size.height
-        self.setGeometry(0, 0, self.m_size.main_width,
-                         self.m_size.editor_height + self.m_size.main_padding[1] * 2
-                         + self.result_item_height * (self.result_size + 4))
+        self.setGeometry(0, 0, int(self.m_size.main_width),
+                         int(self.m_size.editor_height + self.m_size.main_padding[1] * 2
+                         + self.result_item_height * (self.result_size + 4)))
 
-        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2
-                            + self.result_item_height * (self.result_size + 2))
+        self.setFixedHeight(int(self.m_size.editor_height + self.m_size.main_padding[1] * 2
+                            + self.result_item_height * (self.result_size + 2)))
         font = self.ws_input.font()
         # font.setPointSize(self.m_size.editor_font_size)  # change it's size
-        font.setPixelSize(self.m_size.editor_font_size)
+        font.setPixelSize(int(self.m_size.editor_font_size))
         self.ws_input.setFont(font)
-        self.ws_input.setFixedHeight(self.m_size.editor_height)
+        self.ws_input.setFixedHeight(int(self.m_size.editor_height))
 
-        self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
+        self.ws_progress_bar.setFixedHeight(int(self.m_size.main_padding[1]))
 
-        self.layout().setContentsMargins(self.m_size.main_padding[0],
-                                         self.m_size.main_padding[1],
-                                         self.m_size.main_padding[0],
+        self.layout().setContentsMargins(int(self.m_size.main_padding[0]),
+                                         int(self.m_size.main_padding[1]),
+                                         int(self.m_size.main_padding[0]),
                                          0)
 
         qr = self.frameGeometry()
@@ -280,7 +280,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.screen_no = screen
         self.screen_width= screen_rect.width
         self.adjust_size()
-        self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
+        self.setFixedHeight(int(self.m_size.editor_height + self.m_size.main_padding[1] * 2))
 
     def set_input_text(self, text):
         # if the text is the same to the origin, it's called by plugin to refresh result list
