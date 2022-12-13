@@ -1,7 +1,7 @@
 {
   "proxy": {
-    "http": "socks5://127.0.0.1:1080",
-    "https": "socks5://127.0.0.1:1080"
+    "http": "http://localhost:1080",
+    "https": "http://localhost:1080"
   },
   "default": {
     "engine": "google",

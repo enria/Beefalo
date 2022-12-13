@@ -17,7 +17,7 @@ class TipsPlugin(AbstractPlugin, SettingInterface):
 
     def __init__(self, api: ContextApi):
         SettingInterface.__init__(self)
-        self.doc_root = self.get_setting("doc_root")
+        self.doc_root = os.path.expanduser(self.get_setting("doc_root"))
         self.api = api
 
     def query(self, keyword, text, token=None, parent=None):

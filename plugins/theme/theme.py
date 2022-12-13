@@ -3,7 +3,6 @@ import json
 
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
 from result_model import ResultItem, ResultAction
-from trans import WindowEffect
 
 
 class Theme(object):
@@ -32,8 +31,6 @@ class ThemePlugin(AbstractPlugin, SettingInterface, I18nInterface):
         with open(os.path.join(self.meta_info.path, "resource", "Theme.css"), "r", encoding="utf-8") as theme_file:
             self.theme_template = theme_file.read()
 
-        self.windowEffect = WindowEffect()
-
         theme = self.themes[self.get_setting("theme")]
         self.change_theme(theme)
 
@@ -53,12 +50,9 @@ class ThemePlugin(AbstractPlugin, SettingInterface, I18nInterface):
                                          ec=theme.style["editor"]["color"],
                                          ebd=theme.style["editor"]["border"],
                                          rb=theme.style["result"]["background"],
-                                         sb=theme.style["result"]["scroll"])
+                                         sb=theme.style["result"]["scroll"],
+                                         br=theme.style.get("border_radius",6))
 
-        if theme.style.get("aero"):
-            self.windowEffect.setAcrylicEffect(int(self.api.win_id),theme.style.get("aero"))
-        else:
-            self.windowEffect.setDefault(int(self.api.win_id))
 
         self.api.change_theme(css, theme.style)
         self.set_setting("theme", theme.name)

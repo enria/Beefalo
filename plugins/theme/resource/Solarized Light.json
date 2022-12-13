@@ -6,6 +6,7 @@
             "color": "#586e75",
             "border": "2px solid #d3af86"
     },
+    "border_radius": 6,
     "result": {
         "background": "#eee8d5",
         "normal": {

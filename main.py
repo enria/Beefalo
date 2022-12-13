@@ -6,23 +6,23 @@ import time
 import ctypes
 import re
 import importlib
+import traceback
 
 import requests
-import win32con
 from PyQt5.QtMultimedia import QMediaPlayer
-from win32process import SuspendThread, ResumeThread
+# from win32process import SuspendThread, ResumeThread
 
-from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, Qt
-from PyQt5.QtGui import QCursor, QKeySequence, QIcon, QFontDatabase
+from PyQt5.QtCore import pyqtSignal, QThread, QObject, QEvent, QTimer, Qt
+from PyQt5.QtGui import QCursor, QKeySequence, QIcon, QFontDatabase, QPalette
 from PyQt5.QtWidgets import (QWidget, QApplication, QShortcut, QDesktopWidget, QLineEdit, QVBoxLayout, QListView,
-                             QSizePolicy, QSystemTrayIcon, QMenu, QAction, QProgressBar)
+                             QSizePolicy, QSystemTrayIcon, QMenu, QAction, QProgressBar,QMainWindow, QGraphicsBlurEffect)
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 sys.path.append("plugin")
 from plugin_api import AbstractPlugin, ContextApi, SettingInterface, PluginInfo, get_logger
 
-from keyboard import Hotkey
+from hotkey import Hotkey
 from result_list import ResultListModel, WidgetDelegate
 from gui_size import WindowSize, ItemSize, SizeScale
 
@@ -36,11 +36,14 @@ class BeefaloWidget(QWidget, SettingInterface):
     meta_info = PluginInfo()
     meta_info.path = "."
 
-    def __init__(self, root_app):
-        super().__init__()
+    def __init__(self, root_app=None):
+        super(BeefaloWidget, self).__init__(root_app)
+        
+        # super().__init__()
+        self.setAttribute(Qt.WA_StyledBackground)
         self.app = root_app
 
-        QFontDatabase.addApplicationFont("resources/fontawesome-regular.ttf")
+        QFontDatabase.addApplicationFont("resources\fontawesome-regular.ttf")
 
         # define ui widgets
         self.result_model = ResultListModel(self)
@@ -48,10 +51,12 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview = QListView()
         self.ws_progress_bar = QProgressBar()
         self.progress_cnt = 0
-        self.screen_no = -1
-        self.screen_width= 0
         self.ws_input = QLineEdit(self)  # 整型文本框
         self.ws_input.installEventFilter(self)
+        self.ws_input_debounce_timer = QTimer(self)
+        self.ws_input.textChanged.connect(self.handle_text_changed)
+        self.obj = QObject()
+
         self.m_size = None
         self.delegate = WidgetDelegate(self.result_model, None)
         self.theme = {}
@@ -70,9 +75,6 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.player = QMediaPlayer(self)  # 1
 
         self.installEventFilter(self)
-        self.debounce_thread = DebounceThread(self)
-        self.debounce_thread.sin_out.connect(self.async_change_result)
-        self.debounce_thread.start()
 
         self.result_size = min(10, max(4, self.get_setting("result_size")))
         self.result_item_height = 0
@@ -84,7 +86,7 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def load_plugins(self):
         plugins_dir = self.get_setting("plugins_dir")
-        for plugin_dir in os.listdir(plugins_dir):
+        for plugin_dir in sorted(os.listdir(plugins_dir)):
             if os.path.isdir(os.path.join(plugins_dir, plugin_dir)) and plugin_dir not in self.get_setting(
                     "exclude_plugin_dir"):
                 # append plugin's folder path
@@ -124,30 +126,23 @@ class BeefaloWidget(QWidget, SettingInterface):
 
     def init_ui(self):
 
-        self.setWindowTitle('Beefalo')
-
-        # make the main window's position center
-        # qr = self.frameGeometry()
-        # cp = QDesktopWidget().availableGeometry().center()
-        # qr.moveCenter(cp)
-        # self.move(qr.topLeft())
-        # self.setFixedHeight(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
-
         vly = QVBoxLayout()
         font = self.ws_input.font()
-        font.setFamily("微软雅黑")
+        font.setFamily("PingFang SC")
         # font.setPointSize(self.m_size.editor_font_size)  # change it's size
         self.ws_input.setFont(font)
         # self.ws_input.setFixedHeight(self.m_size.editor_height)
         self.ws_input.setObjectName("MainLineEdit")
         self.ws_input.textChanged.connect(self.handle_text_changed)
         self.ws_input.returnPressed.connect(self.handle_result_triggered)
+        self.ws_input_debounce_timer.setSingleShot(True)
+
+        self.ws_input_debounce_timer.timeout.connect(self.query)
 
         self.ws_progress_bar.setMaximum(0)
         self.ws_progress_bar.setMinimum(0)
         self.ws_progress_bar.setVisible(False)
         self.ws_progress_bar.setObjectName("QueryProgressBar")
-        # self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
         sp_retain = self.ws_progress_bar.sizePolicy()
         sp_retain.setRetainSizeWhenHidden(True)
         self.ws_progress_bar.setSizePolicy(sp_retain)
@@ -155,10 +150,10 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.setObjectName("ResultListView")
         self.ws_listview.setModel(self.result_model)
         self.ws_listview.setItemDelegate(self.delegate)
-        self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum))
+        # self.ws_listview.setSizePolicy(QSizePolicy(QSizePolicy.Expanding, QSizePolicy.Maximum))
         self.ws_listview.clicked.connect(self.handle_result_triggered)
         self.ws_listview.setCursor(QCursor(Qt.PointingHandCursor))
-        self.ws_listview.installEventFilter(self)
+        # self.ws_listview.installEventFilter(self)
         self.ws_listview.setMouseTracking(True)
         self.ws_listview.mouseMoveEvent = self.mouseMoveEvent
 
@@ -168,12 +163,9 @@ class BeefaloWidget(QWidget, SettingInterface):
         vly.setSpacing(0)
         vly.setAlignment(Qt.AlignTop)
         self.setLayout(vly)
-        self.setWindowFlag(Qt.ToolTip)
+        # self.setWindowFlag(Qt.FramelessWindowHint)
+        # self.setAttribute(Qt.WA_TranslucentBackground)
         self.setObjectName("MainWidget")
-
-        if self.get_setting("start_show"):
-            self.change_visible()
-            
 
     def start_progress(self):
         self.ws_progress_bar.setVisible(True)
@@ -184,10 +176,10 @@ class BeefaloWidget(QWidget, SettingInterface):
         if self.progress_cnt == 0:
             self.ws_progress_bar.setVisible(False)
 
-    def mouseMoveEvent(self, e):
-        # todo mouse select result item
-        # print(e.flags())
-        pass
+    # def mouseMoveEvent(self, e):
+    #     # todo mouse select result item
+    #     # print(e.flags())
+    #     pass
 
     def adjust_size(self):
         base_height = self.m_size.editor_height + self.m_size.main_padding[1] * 2
@@ -210,7 +202,9 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.ws_listview.setFixedHeight(int(actual_height - base_height - self.m_size.result_margin_top))
         else:
             self.ws_listview.setFixedHeight(int(actual_height - base_height))
+        self.ws_progress_bar.setFixedHeight(self.m_size.main_padding[1])
         self.setFixedHeight(int(actual_height))
+        self.app.set_window_height(int(actual_height))
 
     def change_theme(self, css, theme):
 
@@ -233,33 +227,21 @@ class BeefaloWidget(QWidget, SettingInterface):
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def change_visible(self, keep=False):
-        if self.isVisible():
-            self.setVisible(False)
-            if not keep:
-                self.clear_input_result()
-        else:
-            self.change_screen()
-            self.setVisible(True)
-            self.activateWindow()
-            self.ws_input.setFocus()
+        self.app.change_visible(keep)
 
-    def change_screen(self):
-        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
-        screen_rect = QApplication.desktop().screenGeometry(screen)
-        if screen == self.screen_no and screen_rect.width==self.screen_width:
-            return
-        screen_rect = QApplication.desktop().screenGeometry(screen)
+    def change_screen(self, screen_rect):
         size_scale = SizeScale((screen_rect.width(), screen_rect.height()))
         self.api.size_scale = size_scale
         self.m_size = WindowSize(size_scale)
         self.delegate.i_size = ItemSize(size_scale)
         self.result_item_height = self.delegate.i_size.height
+         
         self.setGeometry(0, 0, int(self.m_size.main_width),
                          int(self.m_size.editor_height + self.m_size.main_padding[1] * 2
                          + self.result_item_height * (self.result_size + 4)))
 
-        self.setFixedHeight(int(self.m_size.editor_height + self.m_size.main_padding[1] * 2
-                            + self.result_item_height * (self.result_size + 2)))
+        # self.setFixedHeight(int(self.m_size.editor_height + self.m_size.main_padding[1] * 2
+        #                     + self.result_item_height * (self.result_size + 2)))
         font = self.ws_input.font()
         # font.setPointSize(self.m_size.editor_font_size)  # change it's size
         font.setPixelSize(int(self.m_size.editor_font_size))
@@ -272,32 +254,20 @@ class BeefaloWidget(QWidget, SettingInterface):
                                          int(self.m_size.main_padding[1]),
                                          int(self.m_size.main_padding[0]),
                                          0)
-
-        qr = self.frameGeometry()
-        cp = QApplication.desktop().screenGeometry(screen).center()
-        qr.moveCenter(cp)
-        self.move(qr.topLeft())
-        self.screen_no = screen
-        self.screen_width= screen_rect.width
+        
         self.adjust_size()
-        self.setFixedHeight(int(self.m_size.editor_height + self.m_size.main_padding[1] * 2))
+        return self.m_size.main_width, int(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
 
     def set_input_text(self, text):
-        # if the text is the same to the origin, it's called by plugin to refresh result list
         # in this case we should cancel the input debounce and don't change the selected row (try to)
         # the 'instant' variable make sense in self.async_change_result, debounce thread and delegate
-        if self.ws_input.text() == text:
-            self.instant = True
-            self.handle_text_changed()
-        else:
-            self.ws_input.setText(text)
-
-        if self.screen_no == -1:
+        
+        self.instant = True
+        self.ws_input.setText(text)
+        self.handle_text_changed()
+        
+        if not self.app.isVisible():
             self.change_visible()
-        else:
-            self.setVisible(True)
-            self.ws_input.activateWindow()
-            self.ws_input.setFocus()
 
     def clear_input_result(self):
         self.ws_input.setText("")
@@ -367,9 +337,10 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview.scrollTo(self.result_model.create_index())
 
     def handle_text_changed(self):
-        if self.debounce_thread.pause:
-            self.debounce_thread.resume()
-        self.debounce_thread.work = False
+        if self.instant:
+            self.ws_input_debounce_timer.start(0)
+        else:
+            self.ws_input_debounce_timer.start(50)
 
     def handle_result_selected(self, index):
         old = self.result_model.create_index()
@@ -394,6 +365,37 @@ class BeefaloWidget(QWidget, SettingInterface):
                 self.change_visible()
             if action.method:
                 action.method(*action.args)
+    
+    def query(self):
+        result = []
+        query = self.ws_input.text()
+        self.token = str(uuid.uuid1())
+        if len(query.strip()):
+            pluginMath = re.match(r"([^\s]+)(\s*)(.*)", query)
+            matched_plugins = []
+            if pluginMath:
+                groups = pluginMath.groups()
+                if self.plugins.get(groups[0]):
+                    keyword, text = groups[0], groups[2]
+                    matched_plugins = [(plugin, keyword, text) for plugin in self.plugins.get(keyword)]
+                if not groups[1]:  # there is not space, so add global plugins
+                    matched_plugins += [(plugin, "*", query) for plugin in self.plugins.get("*")]
+
+            if not matched_plugins:  # haven't matched any plugins, just treat it as global query
+                matched_plugins = [(plugin, "*", query) for plugin in self.plugins.get("*")]
+
+            for matched in matched_plugins:
+                plugin, keyword, text = matched
+                if plugin.meta_info.async_result:
+                    item, asyncThread = plugin.query(keyword, text, self.token, self.obj)
+                    result += item
+                    if asyncThread:
+                        asyncThread.sin_out.connect(self.async_add_results)
+                        asyncThread.start()
+                else:
+                    result += plugin.query(keyword, text)
+        
+        self.async_change_result(result)
 
     def eventFilter(self, obj, event):
         if event.type() == QEvent.WindowDeactivate:
@@ -416,76 +418,79 @@ class BeefaloWidget(QWidget, SettingInterface):
         return QObject.eventFilter(self, obj, event)  # 交由其他控件处理
 
 
-class DebounceThread(QThread):
-    sin_out = pyqtSignal([list])
-
-    def __init__(self, view: 'BeefaloWidget'):
-        super(DebounceThread, self).__init__(view)
-        self.view = view
-        self.work = False
-        self.pause = True
-        self.handle = None
-
-    def run(self):
-        self.obj = QObject()
-        try:
-            self.handle = ctypes.windll.kernel32.OpenThread(  # @UndefinedVariable
-                win32con.PROCESS_ALL_ACCESS, False, int(QThread.currentThreadId()))
-        except Exception as e:
-            log.error('get thread handle failed', e)
-            return
-        self.suspend()
-        self.work = True
-        self.pause = False
-        while True:
-            if not self.view.instant:
-                # sleep to debounce
-                time.sleep(0.05)
-            if self.work:
-                result = []
-                query = self.view.ws_input.text()
-                self.view.token = str(uuid.uuid1())
-                if len(query.strip()):
-                    pluginMath = re.match(r"([^\s]+)(\s*)(.*)", query)
-                    matched_plugins = []
-                    if pluginMath:
-                        groups = pluginMath.groups()
-                        if self.view.plugins.get(groups[0]):
-                            keyword, text = groups[0], groups[2]
-                            matched_plugins = [(plugin, keyword, text) for plugin in self.view.plugins.get(keyword)]
-                        if not groups[1]:  # there is not space, so add global plugins
-                            matched_plugins += [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
-
-                    if not matched_plugins:  # haven't matched any plugins, just treat it as global query
-                        matched_plugins = [(plugin, "*", query) for plugin in self.view.plugins.get("*")]
-
-                    for matched in matched_plugins:
-                        plugin, keyword, text = matched
-                        if plugin.meta_info.async_result:
-                            item, asyncThread = plugin.query(keyword, text, self.view.token, self.obj)
-                            result += item
-                            if asyncThread:
-                                asyncThread.sin_out.connect(self.view.async_add_results)
-                                asyncThread.start()
-                        else:
-                            result += plugin.query(keyword, text)
-                self.sin_out.emit(result)
-                if self.work:
-                    self.suspend()
-            else:
-                self.work = True
-
-    def suspend(self):
-        self.pause = True
-        SuspendThread(self.handle)
-
-    def resume(self):
-        ResumeThread(self.handle)
-        self.pause = False
-
-
 global sys_tray
 
+class MainWindow(QMainWindow):
+    def __init__(self, app):
+        super(MainWindow, self).__init__()
+        
+        self.screen_no = -1
+        self.screen_width= 0
+
+        self.press_x, self.press_y = 0,0
+
+        # Widget
+        self.widget = BeefaloWidget(self)
+        self.widget_width = -1
+
+        # Initial
+        self.setWindowFlag(Qt.FramelessWindowHint)
+        self.setAttribute(Qt.WA_TranslucentBackground)
+        if self.widget.get_setting("start_show"):
+            self.change_visible()
+        else:
+            self.setVisible(False)
+    
+    def set_window_height(self, height):
+        # self.resize(self.widget_width, height)
+        self.setFixedHeight(height)
+    
+    def to_screen_center(self):
+        screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
+        screen_rect = QApplication.desktop().screenGeometry(screen)
+        if screen == self.screen_no and screen_rect.width==self.screen_width:
+            return
+        
+        widget_width, widget_height = self.widget.change_screen(screen_rect)
+        self.widget_width = widget_width
+        self.setFixedHeight(widget_height)
+        self.resize(widget_width, widget_height)
+        
+        qr = self.frameGeometry()
+        cp = QApplication.desktop().screenGeometry(screen).center()
+        cp.setY(cp.y()*2//3)
+        qr.moveCenter(cp)
+        self.move(qr.topLeft())
+
+        self.screen_no = screen
+        self.screen_width= screen_rect.width
+
+    def change_visible(self, keep=False):
+        if self.isVisible():
+            self.setVisible(False)
+            if not keep:
+                self.widget.clear_input_result()
+        else:
+            self.to_screen_center()
+            self.setVisible(True)
+            self.activateWindow()
+            self.raise_()
+    
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.moveFlag = True
+            self.movePosition = event.globalPos() - self.pos()
+            self.setCursor(QCursor(Qt.OpenHandCursor))
+            event.accept()
+    
+    def mouseMoveEvent(self, event):
+        if Qt.LeftButton and self.moveFlag:
+            self.move(event.globalPos() - self.movePosition)
+            event.accept()
+    
+    def mouseReleaseEvent(self, QMouseEvent):
+        self.moveFlag = False
+        self.setCursor(Qt.ArrowCursor)
 
 def start_app():
     # TODO i18n
@@ -493,7 +498,8 @@ def start_app():
     app = QApplication(sys.argv)
     global sys_tray
     sys_tray = QSystemTrayIcon(app)
-    window = BeefaloWidget(app)
+    window = MainWindow(app)
+    # window = BeefaloWidget(app)
 
     # I found the problem by trial and error.
     # It turned out the application closed only when mother is not shown.
@@ -501,17 +507,19 @@ def start_app():
     # As the mother class is used as a daemon, this line must be added to change that behavior:
     app.setQuitOnLastWindowClosed(False)
 
-    sys_tray.setIcon(QIcon("images/beefalo.ico"))  # 设置托盘图标
+    sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
     sys_tray_menu = QMenu()
-    show_action = QAction(QIcon("images/radio-fill.png"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
-    show_action.triggered.connect(window.change_visible)
-    exit_action = QAction(QIcon("images/exit.png"), u'退出', app)  # 添加一级菜单动作选项(退出程序)
+    show_action = QAction(QIcon("images/radio-fill.ico"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
+    # show_action.triggered.connect(window.change_visible)
+    exit_action = QAction(QIcon("images/exit.ico"), u'退出', app)  # 添加一级菜单动作选项(退出程序)
     exit_action.triggered.connect(app.exit)
     sys_tray_menu.addAction(show_action)
     sys_tray_menu.addAction(exit_action)
     sys_tray.setContextMenu(sys_tray_menu)  # 把tpMenu设定为托盘的右键菜单
     sys_tray.show()  # 显示托盘
 
+    # window.show()
+    # window.centralwidget.show()
     code = app.exec_()
     sys.exit(code)
 

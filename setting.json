@@ -1,21 +1,22 @@
 {
   "hotkeys": {
-    "alt+ ": "",
-    "alt+S": "tip ",
-    "alt+F": "find ",
-    "alt+D": "dict ",
-    "alt+T": "todo ",
-    "alt+G": "ghb ",
-    "alt+Q": "qrc ",
-    "alt+B": "baidu ",
-    "alt+V": "vsc ",
-    "alt+C": "chbm "
+    "<cmd>+<49>": "",
+    "<alt>+<1>": "tip ",
+    "<alt>+<3>": "find ",
+    "<alt>+<2>": "dict ",
+    "<alt>+<17>": "todo ",
+    "<alt>+<5>": "ghb ",
+    "<alt>+<12>": "qrc ",
+    "<alt>+<11>": "baidu ",
+    "<alt>+<9>": "vsc ",
+    "<alt>+<8>": "chbm ",
+    "<alt>+<45>": "notion "
   },
   "result_size": 6,
   "plugins_dir": "plugins",
   "language": "zh",
   "exclude_plugin_dir": [
-    "qr_code","api_doc"
+    "qr_code","api_doc","everything","system_cmd"
   ],
   "start_show":false
 }

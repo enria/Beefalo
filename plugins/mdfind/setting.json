@@ -1,0 +1,16 @@
+{
+  "everything_query_max": 50,
+  "system_icon": true,
+  "link_root": ["/Users/zhangyd/software/Beefalo/Links"],
+  "space":[
+    {
+      "keyword":"*",
+      "dirs": ["~/software/Beefalo/Links","/Applications"]
+    },
+    {
+      "keyword":"notion",
+      "dirs": ["~/Applications/Chrome Apps.localized"],
+      "name": "kind: app {}"
+    }
+  ]
+}

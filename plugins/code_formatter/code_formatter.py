@@ -8,6 +8,7 @@ from PyQt5.QtGui import QGuiApplication
 
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, get_logger, I18nInterface
 from result_model import ResultItem, ResultAction, CopyAction
+from utils import startfile
 
 log = get_logger("Formatter")
 
@@ -129,7 +130,7 @@ class FormatterPlugin(AbstractPlugin, I18nInterface):
     def openViewpage(self, page, dataFile, text):
         with open(os.path.join(self.view, dataFile), "w", encoding="utf-8") as file:
             file.write(text)
-        os.startfile(os.path.join(self.view, page))
+        startfile(os.path.join(self.view, page))
 
 
 class SQLHelper:

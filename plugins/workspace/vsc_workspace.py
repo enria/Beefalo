@@ -7,7 +7,7 @@ import sqlite3
 vsc_path="code"
 
 last_update=None
-storage_path=os.path.join(os.path.expanduser('~'),"AppData/Roaming/Code/User/globalStorage/state.vscdb")
+storage_path=os.path.join(os.path.expanduser('~'),"Library/Application Support/Code/User/globalStorage/state.vscdb")
 entries=[]
 
 
@@ -21,7 +21,7 @@ def multi_contain(total,parts):
 # 解决循环中的闭包问题
 def wrapper(uri):
     def open_workspace():
-        os.system('code --folder-uri "%s"'%uri)
+        os.system('/usr/local/bin/code --folder-uri "%s"'%uri)
     return open_workspace
 
 def search(name):
@@ -29,7 +29,7 @@ def search(name):
     name=re.split("\s",name.strip())
     global entries,last_update
     if last_update!=os.path.getmtime(storage_path): # update db cache
-        conn = sqlite3.connect(f'file:/{storage_path}?mode=ro', uri=True)
+        conn = sqlite3.connect(f'file://{storage_path}?mode=ro', uri=True)
         entries=next(conn.execute(""" select value from ItemTable where key="history.recentlyOpenedPathsList" """))[0]
         entries=json.loads(entries)["entries"]
         conn.close()

@@ -3,7 +3,7 @@ import os
 import re
 from plugin_api import AbstractPlugin, ContextApi, PluginInfo, SettingInterface, I18nInterface
 from result_model import ResultItem, ResultAction, MenuItem
-
+from utils import startfile
 
 def convertJsTemplate(text):
     return re.sub(r"([\\`$])", r"\\\1", text)
@@ -22,7 +22,7 @@ class PluginHintPlugin(AbstractPlugin, I18nInterface):
         item = ResultItem(self.meta_info, plugin.meta_info.name, subTitle,
                           os.path.join(plugin.meta_info.path, plugin.meta_info.icon),
                           action, True)
-        item.menus = [MenuItem(" {}".format(self.i18n_text("open_dir")), ResultAction(os.startfile, True, plugin.meta_info.path))]
+        item.menus = [MenuItem(" {}".format(self.i18n_text("open_dir")), ResultAction(startfile, True, plugin.meta_info.path))]
         if SettingInterface in inspect.getmro(plugin):
             item.menus.append(MenuItem(" {}".format(self.i18n_text("setting")), ResultAction(self.api.edit_setting, True, plugin)))
         return item

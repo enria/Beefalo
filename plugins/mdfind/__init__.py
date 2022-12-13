@@ -1,0 +1,1 @@
+from everything import MDFindPlugin

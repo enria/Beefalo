@@ -19,6 +19,7 @@ from PyQt5.QtWinExtras import QtWin
 
 from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 from plugin_api import AbstractPlugin, PluginInfo, SettingInterface, ContextApi, get_logger, I18nInterface
+from utils import startfile
 from file_icon import file_icons
 
 log = get_logger("Everything")
@@ -26,7 +27,7 @@ log = get_logger("Everything")
 
 def open_file(file, plugin_info, api):
     try:
-        os.startfile(file)
+        startfile(file)
     except BaseException as e:
         api.show_message("无法打开文件", str(e),
                          QIcon(os.path.join(plugin_info.path, "images/everything_error.png")), 1000)

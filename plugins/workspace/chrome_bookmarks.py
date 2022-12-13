@@ -4,7 +4,7 @@ import re
 import webbrowser
 from urllib.parse import unquote
 
-storage_path=os.path.join(os.path.expanduser('~'),"AppData\\Local\\Google\\Chrome\\User Data\\Default\\Bookmarks")
+storage_path=os.path.join(os.path.expanduser('~'),"Library/Application Support/Google/Chrome/Default/Bookmarks")
 
 def multi_contain(total,parts):
     totle_low=total.lower()

@@ -2,6 +2,7 @@ import webbrowser
 import requests
 import re
 import json
+import urllib.parse
 
 from lxml import etree
 from PyQt5.QtCore import QThread, pyqtSignal
@@ -128,7 +129,7 @@ class WebSearchResultItem(ResultItem):
     def __init__(self, plugin_info, i18n: I18nInterface, engine: SearchEngine, item: SearchItem):
         super().__init__(plugin_info)
         if item.text:
-            self.url = engine.url.format(text=item.query)
+            self.url = engine.url.format(text=urllib.parse.quote(item.query))
             self.title = item.text
             self.subTitle = item.sub_title if item.sub_title else "{} {}".format(i18n.i18n_text("search"), engine.name)
         else:

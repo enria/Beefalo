@@ -3,3 +3,6 @@ __pycache__
 log/*.log*
 /plugins/translate/speech.mp3
 /venv/
+.vscode
+dist
+build

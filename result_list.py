@@ -162,7 +162,7 @@ class WidgetDelegate(QAbstractItemDelegate):
                 render.render(painter, QRectF(left, top, self.i_size.drop_size[0], self.i_size.drop_size[1]))
 
         font = QFont()
-        font.setFamilies(["微软雅黑", "FontAwesome"])
+        font.setFamilies(["PingFang SC", "FontAwesome"])
         font.setPixelSize(self.i_size.font_size)
         font.setWeight(self.i_size.font_weight)
         sub_font = QFont()
@@ -174,15 +174,16 @@ class WidgetDelegate(QAbstractItemDelegate):
         icon_size = QSize(self.i_size.icon_size[0], self.i_size.icon_size[1])
 
         plugin_path = index.data().plugin_info.path
+        dr = self.i_size.device_ratio
         if isinstance(index.data().icon, QIcon):
-            pm = index.data().icon.pixmap(QSize(icon_size.width(), icon_size.height()))
+            pm = index.data().icon.pixmap(QSize(icon_size.width()*dr, icon_size.height()*dr))
             icon = QIcon(pm)
         else:
             if index.data().root:
                 pm = QPixmap(index.data().icon)
             else:
                 pm = QPixmap(os.path.join(plugin_path, index.data().icon))
-            pm = pm.scaled(icon_size.width(), icon_size.height(), Qt.IgnoreAspectRatio, Qt.SmoothTransformation)
+            pm = pm.scaled(icon_size.width()*dr, icon_size.height()*dr, Qt.IgnoreAspectRatio, Qt.SmoothTransformation)            
             icon = QIcon(pm)
         icon_rect = QRect(self.i_size.icon_margin[0], option.rect.top() + self.i_size.icon_margin[1], icon_size.width(),
                           icon_size.height())
@@ -195,9 +196,10 @@ class WidgetDelegate(QAbstractItemDelegate):
         color = theme["normal"]["color"]
         if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
             color = theme["highlight"]["color"]
-        painter.drawPixmap(
-            QPoint(icon_rect.left(), icon_rect.top()),
-            icon.pixmap(icon_size.width(), icon_size.height()))
+        
+        pm=icon.pixmap(icon_size.width()*dr, icon_size.height()*dr)
+        pm.setDevicePixelRatio(dr)
+        painter.drawPixmap(QPoint(icon_rect.left(), icon_rect.top()),pm)
         painter.setFont(font)
         painter.setPen(QColor(color))
         painter.drawText(header_rect, Qt.AlignTop, title)

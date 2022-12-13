@@ -22,7 +22,7 @@ class PluginEditorWidget(QWidget):
         self.setLayout(self.vly)
         self.label = QLabel(plugin.meta_info.name)
         font = QFont()
-        font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
+        font.setFamilies(["黑体", "Segoe UI Symbol"])
         self.label.setFont(font)
         self.label.setObjectName("Title")
 
@@ -39,7 +39,7 @@ class PluginEditorWidget(QWidget):
         button_group.addWidget(self.save_btn)
         button_group.addWidget(self.reset_btn)
         font = QFont()
-        font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
+        font.setFamilies(["黑体", "Segoe UI Symbol"])
         self.save_btn.setObjectName("SaveButton")
         self.save_btn.setCursor(QCursor(Qt.PointingHandCursor))
         self.reset_btn.setObjectName("ResetButton")
@@ -103,7 +103,7 @@ class PluginTitleWidget(QWidget):
 
         self.name_label = QLabel(plugin.meta_info.name)
         font = QFont()
-        font.setFamilies(["微软雅黑", "Segoe UI Symbol"])
+        font.setFamilies(["黑体", "Segoe UI Symbol"])
         font.setPixelSize(16)
         self.name_label.setFont(font)
         self.name_label.setObjectName("Name")

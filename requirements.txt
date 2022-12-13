@@ -14,14 +14,6 @@ PyQt5
 PyQt5-sip
 PyQt5-stubs
 PySocks
-pywin32
 PyYAML
-qrcode
 requests
-setuptools
-six
-soupsieve
-urllib3
-Werkzeug
-concurrent-log-handler
 pillow

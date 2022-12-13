@@ -50,7 +50,7 @@ class Dialog(QDialog):
             log.error(e)
             w_code_text = QLabel(self)
             w_code_text.setText("The text is too long!")
-            w_code_text.setFont(QFont('微软雅黑', 12))
+            w_code_text.setFont(QFont('黑体', 12))
             vly.addWidget(w_code_text)
 
         vly.setContentsMargins(0, 0, 0, 0)
