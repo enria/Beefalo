@@ -3,6 +3,8 @@ import json
 import re
 from urllib.parse import unquote
 import sqlite3
+import urllib.parse
+from workspace import Workspace
 
 vsc_path="code"
 
@@ -24,6 +26,20 @@ def wrapper(uri):
         os.system('/usr/local/bin/code --folder-uri "%s"'%uri)
     return open_workspace
 
+def delete_worksapce_item(item):
+    def _delete():
+        conn = sqlite3.connect(f'file://{storage_path}', uri=True)
+        origin_entries=next(conn.execute(""" select value from ItemTable where key="history.recentlyOpenedPathsList" """))[0]
+        origin_entries = json.loads(origin_entries)
+        entries=origin_entries["entries"]
+        entries = list(filter(lambda entry: entry!=item, entries))
+        origin_entries["entries"] = entries
+        cur = conn.cursor()
+        cur.execute('update ItemTable set value = ? where key="history.recentlyOpenedPathsList"',(json.dumps(origin_entries),))
+        conn.commit()
+        conn.close()
+    return _delete
+
 def search(name):
     results=[]
     name=re.split("\s",name.strip())
@@ -38,8 +54,9 @@ def search(name):
     for entry in entries:
         if "folderUri" in entry:
             folder_uri=entry["folderUri"]
+            
 
-            label=entry.get("label",folder_uri.split("/")[-1])
+            label=entry.get("label",folder_uri.split("//")[-1])
             title=label
             sub_title=label
 
@@ -50,11 +67,14 @@ def search(name):
             
             if not title:
                 title="/"
+            title = urllib.parse.unquote(title)
+            sub_title = urllib.parse.unquote(sub_title)
 
             if not multi_contain(sub_title,name):
                 continue
 
             action=wrapper(folder_uri)
-            results.append((title,sub_title,action))
+            menus = [delete_worksapce_item(entry)]
+            results.append(Workspace(title, sub_title, action, menus=menus))
 
     return results

@@ -1,16 +1,22 @@
 {
   "everything_query_max": 50,
   "system_icon": true,
-  "link_root": ["/Users/zhangyd/software/Beefalo/Links"],
+  "favorites":[
+    "/Users/zhangyd",
+    "/Users/zhangyd/Downloads",
+    "/Applications",
+    ["Hit@K","sftp://yadong@172.23.148.35/home/yadong/"],
+    ["Recall","sftp://yadong@172.23.148.37:3322/"]
+  ],
   "space":[
     {
       "keyword":"*",
-      "dirs": ["~/software/Beefalo/Links","/Applications"]
+      "dirs": ["/Applications","/System/Applications"],
+      "args": ["kind:app"]
     },
     {
-      "keyword":"notion",
-      "dirs": ["~/Applications/Chrome Apps.localized"],
-      "name": "kind: app {}"
+      "keyword":"*",
+      "dirs": ["~/software/Beefalo/Links"]
     }
   ]
 }

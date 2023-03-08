@@ -227,6 +227,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def change_visible(self, keep=False):
+
         self.app.change_visible(keep)
 
     def change_screen(self, screen_rect):
@@ -256,7 +257,8 @@ class BeefaloWidget(QWidget, SettingInterface):
                                          0)
         
         self.adjust_size()
-        return self.m_size.main_width, int(self.m_size.editor_height + self.m_size.main_padding[1] * 2)
+        return self.m_size.main_width, int(self.m_size.editor_height + self.m_size.main_padding[1] * 2), \
+               4 * self.result_item_height
 
     def set_input_text(self, text):
         # in this case we should cancel the input debounce and don't change the selected row (try to)
@@ -277,7 +279,7 @@ class BeefaloWidget(QWidget, SettingInterface):
             self.result_model.addItems(results)
 
     def async_change_result(self, results,instant=False):
-        self.result_model.changeItems(results, self.instant or instant)
+        self.result_model.changeItems(results, instant)
         self.instant = False
         if self.result_model.select.row > -1:  # selected row may has been changed
             self.ws_listview.scrollTo(self.result_model.create_index())
@@ -393,7 +395,7 @@ class BeefaloWidget(QWidget, SettingInterface):
                         asyncThread.sin_out.connect(self.async_add_results)
                         asyncThread.start()
                 else:
-                    result += plugin.query(keyword, text)
+                        result += plugin.query(keyword, text)
         
         self.async_change_result(result)
 
@@ -423,6 +425,7 @@ global sys_tray
 class MainWindow(QMainWindow):
     def __init__(self, app):
         super(MainWindow, self).__init__()
+        self.app = app
         
         self.screen_no = -1
         self.screen_width= 0
@@ -434,13 +437,14 @@ class MainWindow(QMainWindow):
         self.widget_width = -1
 
         # Initial
-        self.setWindowFlag(Qt.FramelessWindowHint)
+
+        self.setWindowFlags(Qt.WindowStaysOnTopHint | Qt.FramelessWindowHint)
         self.setAttribute(Qt.WA_TranslucentBackground)
         if self.widget.get_setting("start_show"):
             self.change_visible()
         else:
             self.setVisible(False)
-    
+        
     def set_window_height(self, height):
         # self.resize(self.widget_width, height)
         self.setFixedHeight(height)
@@ -451,14 +455,14 @@ class MainWindow(QMainWindow):
         if screen == self.screen_no and screen_rect.width==self.screen_width:
             return
         
-        widget_width, widget_height = self.widget.change_screen(screen_rect)
+        widget_width, widget_height, offset_height = self.widget.change_screen(screen_rect)
         self.widget_width = widget_width
         self.setFixedHeight(widget_height)
         self.resize(widget_width, widget_height)
         
         qr = self.frameGeometry()
         cp = QApplication.desktop().screenGeometry(screen).center()
-        cp.setY(cp.y()*2//3)
+        cp.setY(cp.y()-offset_height)
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
@@ -466,6 +470,7 @@ class MainWindow(QMainWindow):
         self.screen_width= screen_rect.width
 
     def change_visible(self, keep=False):
+        # print("visiable",self.isVisible())
         if self.isVisible():
             self.setVisible(False)
             if not keep:
@@ -475,6 +480,12 @@ class MainWindow(QMainWindow):
             self.setVisible(True)
             self.activateWindow()
             self.raise_()
+            self.widget.ws_input.setFocus()
+            # print("active window",self.isActiveWindow(), self.app.activeWindow())
+    
+    def show(self):
+        if not self.isVisible():
+            self.change_visible()
     
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -491,6 +502,11 @@ class MainWindow(QMainWindow):
     def mouseReleaseEvent(self, QMouseEvent):
         self.moveFlag = False
         self.setCursor(Qt.ArrowCursor)
+    
+    def showEvent(self, event):
+        super().showEvent(event)
+        self.activateWindow()
+        self.raise_()
 
 def start_app():
     # TODO i18n
@@ -506,12 +522,17 @@ def start_app():
     # The reason is that the default behavior is to quit the app when the last window close.
     # As the mother class is used as a daemon, this line must be added to change that behavior:
     app.setQuitOnLastWindowClosed(False)
-
-    sys_tray.setIcon(QIcon("images/system_icon.png"))  # 设置托盘图标
+    sys_tray_icon = QIcon("images/system_icon.png")
+    sys_tray_icon.setIsMask(True)
+    sys_show_icon = QIcon("images/radio-fill.ico")
+    sys_show_icon.setIsMask(True)
+    sys_exit_icon = QIcon("images/exit.ico")
+    sys_exit_icon.setIsMask(True)
+    sys_tray.setIcon(sys_tray_icon)  # 设置托盘图标
     sys_tray_menu = QMenu()
-    show_action = QAction(QIcon("images/radio-fill.ico"), u'显示', app)  # 添加一级菜单动作选项(关于程序)
-    # show_action.triggered.connect(window.change_visible)
-    exit_action = QAction(QIcon("images/exit.ico"), u'退出', app)  # 添加一级菜单动作选项(退出程序)
+    show_action = QAction(sys_show_icon, u'显示 / 隐藏', app)  # 添加一级菜单动作选项(关于程序)
+    show_action.triggered.connect(window.change_visible)
+    exit_action = QAction(sys_exit_icon, u'退出', app)  # 添加一级菜单动作选项(退出程序)
     exit_action.triggered.connect(app.exit)
     sys_tray_menu.addAction(show_action)
     sys_tray_menu.addAction(exit_action)

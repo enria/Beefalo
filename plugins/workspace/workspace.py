@@ -12,11 +12,11 @@ from result_model import ResultItem, ResultAction, MenuItem, CopyAction
 
 log = get_logger("Workspace")
 
-
 class IDE(object):
-    def __init__(self,plugin_info,name,keyword,script,icon):
+    def __init__(self,plugin_info, api,name,keyword,script,icon):
 
         self.plugin_info=plugin_info
+        self.api = api
 
         self.name=name
         self.keyword=keyword
@@ -24,21 +24,31 @@ class IDE(object):
         self.icon=icon
 
         self.instance=None
+
+    def delete_workspace(self, to_query, action):
+        action()
+        self.api.change_query(to_query)
     
     def search(self,name):
         if self.instance==None:
             self.instance = imp.load_source(self.name, os.path.join(self.plugin_info.path,self.script))
-        
+
         results=[]
-        for title,sub_title,action in self.instance.search(name):
-            item=ResultItem(self.plugin_info,title,sub_title,self.icon,ResultAction(action,True))
+        for space in self.instance.search(name):
+            item=ResultItem(self.plugin_info,space.title,space.sub_title,action = ResultAction(space.action, True))
+            item.icon = space.icon if space.icon else self.icon
+            if space.menus: item.menus = space.menus
             results.append(item)
 
         return results
 
-
-
-
+class Workspace(object):
+    def __init__(self, title, sub_title, action, icon=None, menus=None) -> None:
+        self.title = title
+        self.sub_title = sub_title
+        self.action = action
+        self.icon = icon
+        self.menus = menus
 
 class WorkspacePlugin(AbstractPlugin, SettingInterface):
     meta_info = PluginInfo("Workspace", "打开工作空间", "images/workspace_icon.png",
@@ -64,7 +74,7 @@ class WorkspacePlugin(AbstractPlugin, SettingInterface):
         keys = []
         self.ides = {}
         for info in ides:
-            ide = IDE(self.meta_info,info["name"], info["keyword"], info["script"], info["icon"])
+            ide = IDE(self.meta_info, self.api,info["name"], info["keyword"], info["script"], info.get("icon"))
             self.ides[info["keyword"]] = ide
             keys.append(info["keyword"])
         self.meta_info.keywords = keys

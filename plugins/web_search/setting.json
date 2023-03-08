@@ -15,11 +15,18 @@
       "home": "https://www.google.com",
       "suggestion": "Google"
     },
-    "bing": {
+    "bing_search": {
       "name": "Bing",
       "icon": "images/web_search_bing.png",
       "query": "https://www.bing.com/search?q={text}",
       "home": "https://www.bing.com"
+    },
+    "bing": {
+      "name": "New Bing",
+      "icon": "images/web_search_new_bing.png",
+      "query": "https://www.bing.com/search?q={text}&showconv=1&FORM=hpcodx",
+      "home": "https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx",
+      "command":"open -a Vivaldi \"{url}\""
     },
     "youtube": {
       "name": "Youtube",
@@ -92,6 +99,12 @@
       "icon": "images/web_search_douban.png",
       "query": "https://www.douban.com/search?q={text}",
       "home": "https://www.douban.com"
+    },
+    "dblp": {
+      "name": "dblp",
+      "icon": "images/web_search_dblp.png",
+      "query": "https://dblp.org/search?q={text}",
+      "home": "https://dblp.org"
     }
   }
 }

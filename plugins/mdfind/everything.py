@@ -1,5 +1,6 @@
 import os
 import ctypes
+import re
 from ctypes.wintypes import *
 import platform
 import subprocess
@@ -19,7 +20,7 @@ from utils import startfile
 from subprocess import Popen, PIPE
 from file_icon import file_icons
 
-log = get_logger("Everything")
+log = get_logger("MDFind")
 
 
 def open_file(file, plugin_info, api):
@@ -53,7 +54,9 @@ class FileResultItem(ResultItem):
             self.title = fileName
         self.subTitle = fullPath
 
-        if system_icon:
+        if re.match(".*://.*",fullPath):
+            self.icon = "images/icons/cloud.png"
+        elif system_icon:
             icon_file_path = fullPath
             self.icon = QFileIconProvider().icon(QFileInfo(icon_file_path))
         else:
@@ -109,31 +112,51 @@ class AsyncSearchThread(QThread):
 global everything_dll
 
 
-def everything_query(root, text, query_max, plugin_info, i18n, api, system_icon):
-    args = None
+def everything_query(root, text, query_max, plugin_info, i18n, api, system_icon, exclude=None, args=None):
+    addtion_args = args
+    args = []
     def quote(d):
-        return f'{d}'
+        return f"{d}"
     if root:
         if type(root) == list:
-            args = []
             for d in root:
                 args.append("-onlyin")
                 args.append(quote(os.path.expanduser(d)))
         else:
-            args = ["-onlyin",quote(root)]
+            args += ["-onlyin",quote(root)]
     else:
-        args = ["-onlyin",os.path.expanduser("~")]
+        args+=["-onlyin",quote(os.path.expanduser('~'))]
+
     if text:
         args +=["-name", text]
-    else:
-        args +=["-name", "kMDItemDisplayName == *"]
+    elif not addtion_args:
+        args +=["\"kMDItemDisplayName=*\""]
+    
+    if addtion_args:
+        args +=addtion_args
+    
+    # with open("/Users/zhangyd/workspace/Beefalo/test.log","a") as fin:
+    #     fin.write(str(args)+"\n")
 
-    num_results=mdfind.mdfind(args).strip()
+    try:
+        num_results = mdfind.mdfind(args).strip()
+    except BaseException as e:
+        log.error(e)
+        num_results=""
     num_results=num_results.split("\n") if num_results else []
     if query_max>0:
         num_results = num_results[:query_max]
+    num_results.sort()
     results = []
     for path in num_results:
+        if exclude:
+            matched = False
+            for exclude_dir in exclude:
+                if re.match(exclude_dir, path):
+                    matched = True
+                    break
+            if matched:
+                continue
         if system_icon:
             results.append(
                 FileResultItem(plugin_info, i18n, AsyncSearchThread.getFileName(path), path, os.path.isdir(path),
@@ -152,7 +175,7 @@ class MDFindPlugin(AbstractPlugin, SettingInterface, I18nInterface):
         I18nInterface.__init__(self, api.language)
         SettingInterface.__init__(self)
         self.api = api
-        self.meta_info.keywords += [x["keyword"] for x in self.get_setting("space")]
+        self.meta_info.keywords += list(set([x["keyword"] for x in self.get_setting("space")]))
 
     def query(self, keyword, text, token=None, parent=None):
         if keyword == "find":
@@ -160,13 +183,26 @@ class MDFindPlugin(AbstractPlugin, SettingInterface, I18nInterface):
                 return [], AsyncSearchThread(parent, text, token, self.api, self.meta_info, self,
                                             self.get_setting("everything_query_max"),
                                             self.get_setting("system_icon"))
+            else:
+                results = []
+                for fav in self.get_setting("favorites"):
+                    if type(fav) == list:
+                        fav_name,fav_path = fav
+                    else:
+                        fav_name,fav_path = AsyncSearchThread.getFileName(fav), fav
+                    results.append(
+                        FileResultItem(self.meta_info, self, fav_name, fav_path, os.path.isdir(fav_path),
+                                    self.api, True))
+                return results, None
         else:
-            dirs =[]
+            results = []
             for space in self.get_setting("space"):
+                dirs =[]
+                exclude = []
                 if space["keyword"] == keyword:
-                    dirs.extend(space["dirs"])
-                    text = space.get("name","{}").format(text)
-                    break
-            return everything_query(dirs, text, self.get_setting("everything_query_max"),
-                                    self.meta_info, self, self.api, self.get_setting("system_icon")), None
-        return [], None
+                    dirs = space["dirs"]
+                    exclude = space.get("exclude",[])
+                    args = space.get("args")
+                    results.extend(everything_query(dirs, text, self.get_setting("everything_query_max"),
+                                    self.meta_info, self, self.api, self.get_setting("system_icon"), exclude, args=args))
+            return results, None

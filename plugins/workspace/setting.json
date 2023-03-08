@@ -1,16 +1,28 @@
 {
   "ides": [
     {
+      "name": "Chrome Bookmarks",
+      "keyword":"chbm",
+      "script": "chrome_bookmarks.py",
+      "icon": "images/chrome.png"
+    },
+    {
       "name": "Visual Studio Code",
       "keyword":"vsc",
       "script": "vsc_workspace.py",
       "icon": "images/vscode.png"
     },
     {
-      "name": "Chrome Bookmarks",
-      "keyword":"chbm",
-      "script": "chrome_bookmarks.py",
+      "name": "System Setting",
+      "keyword":"*",
+      "script": "system_setting.py",
       "icon": "images/chrome.png"
+    },
+    {
+      "name": "Vivaldi Bookmarks",
+      "keyword":"webapp",
+      "script": "vivaldi_bookmarks.py",
+      "icon": "images/vivaldi.png"
     }
   ]
 }

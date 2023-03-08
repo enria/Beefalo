@@ -218,3 +218,4 @@ bismuth	n. [化学] 铋
 problematic	adj. 问题的；有疑问的；不确定的
 rigorously	adv. 严厉地；残酷地
 heuristic	adj. 启发式的；探索的
+dashboard	n. （汽车的）仪表板；<史>（马车上木制或皮制的）挡泥板；总结性表格；网站主页

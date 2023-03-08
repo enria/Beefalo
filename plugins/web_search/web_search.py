@@ -1,5 +1,6 @@
 import webbrowser
 import requests
+import os
 import re
 import json
 import urllib.parse
@@ -14,13 +15,14 @@ global log
 
 
 class SearchEngine:
-    def __init__(self, name, icon, url, home, suggestion):
+    def __init__(self, name, icon, url, home, suggestion, command=None):
         self.icon = icon
         self.url = url
         self.name = name
         self.home = home
         self.suggestion = suggestion
         self.direct = True
+        self.command = command
 
 
 class SearchItem(object):
@@ -128,6 +130,7 @@ class WikiSuggestion(SearchSuggestion):
 class WebSearchResultItem(ResultItem):
     def __init__(self, plugin_info, i18n: I18nInterface, engine: SearchEngine, item: SearchItem):
         super().__init__(plugin_info)
+        self.engine = engine
         if item.text:
             self.url = engine.url.format(text=urllib.parse.quote(item.query))
             self.title = item.text
@@ -138,10 +141,18 @@ class WebSearchResultItem(ResultItem):
             self.subTitle = engine.home
 
         self.icon = engine.icon
-        self.action = ResultAction(self.openBrowser, True)
 
-    def openBrowser(self):
+        if engine.command:
+            self.action = ResultAction(self.openBrowser, True)
+        else:
+            self.action = ResultAction(self.openDefaultBrowser, True)
+
+    def openDefaultBrowser(self):
         webbrowser.open(self.url)
+    
+    def openBrowser(self):
+        print(self.url)
+        os.system(self.engine.command.format(url=self.url))
 
 
 class AsyncSuggestThread(QThread):
@@ -196,12 +207,15 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface, I18nInterface):
             engine = self.engines[keyword]
         else:
             engine = self.engines[self.default_engine]
+
         if engine.direct:
             results.append(WebSearchResultItem(self.meta_info, self, engine, SearchItem(text)))
+
         if engine.suggestion:
             suggest = self.suggestions.get(engine.suggestion)
         else:
             suggest = self.suggestions.get(self.default_suggest)
+
         if suggest:
             return results, AsyncSuggestThread(self.meta_info, self, self.api, keyword, parent, suggest, engine, text,
                                                token)
@@ -215,7 +229,7 @@ class WebSearchPlugin(AbstractPlugin, SettingInterface, I18nInterface):
         for key in engines:
             info = engines[key]
             engine = SearchEngine(info["name"], info["icon"], info["query"], info["home"],
-                                  info.get("suggestion"))
+                                  info.get("suggestion"),info.get("command"))
             if "direct" in info:
                 engine.direct = info["direct"]
             self.engines[key] = engine

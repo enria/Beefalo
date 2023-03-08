@@ -1,7 +1,7 @@
 import os
 
 from PyQt5.QtCore import QAbstractListModel, QModelIndex, QSize, QRect, QPoint, Qt, pyqtSignal, QRectF
-from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon
+from PyQt5.QtGui import QPixmap, QColor, QBrush, QFont, QIcon, QPainterPath, QPen, QPainter
 from PyQt5.QtSvg import QSvgRenderer
 from PyQt5.QtWidgets import QStyledItemDelegate, QAbstractItemDelegate,QToolTip
 
@@ -153,8 +153,17 @@ class WidgetDelegate(QAbstractItemDelegate):
             if theme["highlight"]["background"].startswith("#") \
             else rgba2qcolor(theme["highlight"]["background"])
         if index.row() == self.model.select.row and self.model.select.selected_menu == -1:
-            background_brush = QBrush(highlight_background, Qt.SolidPattern)
-            painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), self.i_size.height), background_brush)
+            if theme["highlight"].get("border_radius", 0):
+                radius = theme["highlight"].get("border_radius", 0)
+                painter.setRenderHint(QPainter.Antialiasing)
+                path = QPainterPath()
+                path.addRoundedRect(0, option.rect.top(), option.rect.width(), self.i_size.height, radius, radius)
+                pen = QPen(Qt.green, 10)
+                painter.setPen(pen)
+                painter.fillPath(path, highlight_background)
+            else:
+                background_brush = QBrush(highlight_background, Qt.SolidPattern)
+                painter.fillRect(QRect(0, option.rect.top(), option.rect.width(), self.i_size.height), background_brush)
             if len(index.data().menus) and not self.model.select.expand:
                 render = self.get_menu_icon_data(self.theme["color"])
                 left = option.rect.width() - (self.i_size.drop_size[0] + self.i_size.drop_margin[0])

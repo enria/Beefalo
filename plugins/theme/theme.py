@@ -51,7 +51,8 @@ class ThemePlugin(AbstractPlugin, SettingInterface, I18nInterface):
                                          ebd=theme.style["editor"]["border"],
                                          rb=theme.style["result"]["background"],
                                          sb=theme.style["result"]["scroll"],
-                                         br=theme.style.get("border_radius",6))
+                                         br=theme.style.get("border_radius",6),
+                                         br2=theme.style.get("border_radius",6)//2*3)
 
 
         self.api.change_theme(css, theme.style)

@@ -1,10 +1,10 @@
 
 #MainWidget{{
     background-color:{mb};
-    border-top-left-radius:{br}px;
-    border-bottom-left-radius:{br}px;
-    border-top-right-radius:{br}px;
-    border-bottom-right-radius:{br}px;
+    border-top-left-radius:{br2}px;
+    border-bottom-left-radius:{br2}px;
+    border-top-right-radius:{br2}px;
+    border-bottom-right-radius:{br2}px;
 
 }}
 
@@ -14,6 +14,8 @@
     border: {ebd};
     padding:3px 0;
     margin:0px;
+    border-radius: {br}px;
+    padding-left: 3px;
 }}
 #ResultListView{{
     border:0;
@@ -34,7 +36,7 @@ QScrollBar::handle:vertical
 {{
     background:{sb};
 }}
-QScrollBar:vertical{{width:6px;background:rgba(0,0,0,0%);margin:0;padding-top:0px;padding-bottom:0px;}}
+QScrollBar:vertical{{width:4px;background:rgba(0,0,0,0%);margin:0;padding-top:0px;padding-bottom:0px;}}
 QScrollBar::add-line:vertical{{height:0px;width:0px;}}
 QScrollBar::sub-line:vertical{{height:0px;width:0px;}}
 QScrollBar::add-page:vertical,QScrollBar::sub-page:vertical{{background:rgba(0,0,0,0%);}}

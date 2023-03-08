@@ -1,28 +1,15 @@
 {
-  "flows": [
+  "flows": [{
+    "name": "重排 PDF 复制内容",
+    "script": "plugins/workflow/actions/arrange_pdf_lines.py",
+    "input": "clipboard",
+    "output": "clipboard"
+    },  
     {
       "name": "文件名",
-      "script": "C:\\Users\\zhangyd\\source\\scripts\\str2filename.py",
+      "script": "plugins/workflow/actions/str2filename.py",
       "input": "clipboard",
       "output": "clipboard"
-    },
-    {
-      "name": "Echo",
-      "script": "C:/Users/13972/Documents/Beefalo/scripts/echo.py",
-      "input": "arg",
-      "output": "dialog"
-    },
-    {
-      "name": "MD5",
-      "script": "C:/Users/13972/Documents/Beefalo/scripts/md5.py",
-      "input": "arg",
-      "output": "result"
-    },
-    {
-      "name": "Word Count",
-      "script": "C:/Users/13972/Documents/Beefalo/scripts/word_count.py",
-      "input": "clipboard",
-      "output": "result"
     }
   ]
 }

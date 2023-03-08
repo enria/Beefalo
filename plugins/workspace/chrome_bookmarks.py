@@ -3,6 +3,7 @@ import json
 import re
 import webbrowser
 from urllib.parse import unquote
+from workspace import Workspace
 
 storage_path=os.path.join(os.path.expanduser('~'),"Library/Application Support/Google/Chrome/Default/Bookmarks")
 
@@ -32,7 +33,7 @@ def search(name):
             sub_title = f'{path}  {item["url"]}'
             if multi_contain(title+" "+sub_title,name):
                 action=wrapper(item["url"])
-                results.append((title,sub_title,action))
+                results.append(Workspace(title, sub_title, action))
     with open(storage_path,encoding="utf-8") as fjson:
         folders=json.load(fjson)["roots"]
         for folder in folders.values():

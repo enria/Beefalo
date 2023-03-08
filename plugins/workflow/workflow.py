@@ -77,7 +77,6 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
         except BaseException as e:
             log.error(e)
             output = str(e)
-
     if flow.output == Source.Dialog:
         dialog = Dialog(flow.name, output, plugin_info, api)
         dialog.show()

@@ -69,23 +69,23 @@ class PluginEditorWidget(QWidget):
 
     def change_size(self):
         s = self.api.size_scale
-        self.vly.setContentsMargins(10 * s.g, 10 * s.g, 0, 10 * s.g)
+        self.vly.setContentsMargins(int(10 * s.g), int(10 * s.g), 0, int(10 * s.g))
 
         font = self.label.font()
-        font.setPixelSize(16 * s.f)
+        font.setPixelSize(int(16 * s.f))
         self.label.setFont(font)
-        self.label.setFixedHeight(48 * s.g)
+        self.label.setFixedHeight(int(48 * s.g))
 
         font = self.editor.font()
-        font.setPixelSize(16 * s.f)
+        font.setPixelSize(int(16 * s.f))
         self.editor.setFont(font)
 
         font = self.save_btn.font()
-        font.setPixelSize(16 * s.f)
+        font.setPixelSize(int(16 * s.f))
         self.save_btn.setFont(font)
         self.reset_btn.setFont(font)
-        self.save_btn.setFixedHeight(30 * s.g)
-        self.reset_btn.setFixedHeight(30 * s.g)
+        self.save_btn.setFixedHeight(int(30 * s.g))
+        self.reset_btn.setFixedHeight(int(30 * s.g))
 
 
 class PluginTitleWidget(QWidget):
@@ -118,11 +118,11 @@ class PluginTitleWidget(QWidget):
 
     def change_size(self):
         pm = QPixmap(os.path.join(self.plugin.meta_info.path, self.plugin.meta_info.icon))
-        pm = pm.scaled(32 * self.api.size_scale.g, 32 * self.api.size_scale.g, Qt.IgnoreAspectRatio,
+        pm = pm.scaled(int(32 * self.api.size_scale.g), int(32 * self.api.size_scale.g), Qt.IgnoreAspectRatio,
                        Qt.SmoothTransformation)
         self.icon_label.setPixmap(pm)
         font = self.name_label.font()
-        font.setPixelSize(16 * self.api.size_scale.f)
+        font.setPixelSize(int(16 * self.api.size_scale.f))
         self.name_label.setFont(font)
 
 
@@ -162,22 +162,22 @@ class SettingDialog(QWidget):
 
         screen = QApplication.desktop().screenNumber(QApplication.desktop().cursor().pos())
 
-        self.setFixedWidth(800 * self.api.size_scale.g)
-        self.setFixedHeight(600 * self.api.size_scale.g)
+        self.setFixedWidth(int(800 * self.api.size_scale.g))
+        self.setFixedHeight(int(600 * self.api.size_scale.g))
         qr = self.frameGeometry()
         cp = QApplication.desktop().screenGeometry(screen).center()
         qr.moveCenter(cp)
         self.move(qr.topLeft())
 
-        self.title_list.setFixedWidth(150 * self.api.size_scale.g)
+        self.title_list.setFixedWidth(int(150 * self.api.size_scale.g))
         for ii in range(self.title_list.count()):
             plugin_title_item = self.title_list.item(ii)
-            plugin_title_item.setSizeHint(QSize(0, 48 * self.api.size_scale.g))
+            plugin_title_item.setSizeHint(QSize(0, int(48 * self.api.size_scale.g)))
             self.title_list.itemWidget(plugin_title_item).change_size()
 
         for ii in range(self.editor_list.count()):
             plugin_editor_item = self.editor_list.item(ii)
-            plugin_editor_item.setSizeHint(QSize(0, 600 * self.api.size_scale.g))
+            plugin_editor_item.setSizeHint(QSize(0, int(600 * self.api.size_scale.g)))
             self.editor_list.itemWidget(plugin_editor_item).change_size()
 
         super().show()
