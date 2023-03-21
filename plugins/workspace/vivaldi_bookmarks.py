@@ -30,7 +30,7 @@ def get_url_icon(url):
     return None
 
 def search(name):
-    results=[]
+    results=[Workspace("Vivaldi Browser", "Used to open webapp", lambda : os.system("open -a Vivaldi"), "resources/1f4fb.png")]
     name=re.split("\s",name.strip())
     def find_bookmark(item,path):
         if item["type"]=="folder":
