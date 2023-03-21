@@ -26,7 +26,7 @@
       "icon": "images/web_search_new_bing.png",
       "query": "https://www.bing.com/search?q={text}&showconv=1&FORM=hpcodx",
       "home": "https://www.bing.com/search?q=Bing+AI&showconv=1&FORM=hpcodx",
-      "command":"open -a Vivaldi \"{url}\""
+      "command":"open \"{url}\""
     },
     "youtube": {
       "name": "Youtube",
