@@ -51,7 +51,7 @@ class BeefaloWidget(QWidget, SettingInterface):
         self.ws_listview = QListView()
         self.ws_progress_bar = QProgressBar()
         self.progress_cnt = 0
-        self.ws_input = QLineEdit(self)  # 整型文本框
+        self.ws_input = QLineEdit(self)  # 整体文本框
         self.ws_input.installEventFilter(self)
         self.ws_input_debounce_timer = QTimer(self)
         self.ws_input.textChanged.connect(self.handle_text_changed)
@@ -227,7 +227,6 @@ class BeefaloWidget(QWidget, SettingInterface):
         QShortcut(QKeySequence("Esc"), self, self.change_visible)
 
     def change_visible(self, keep=False):
-
         self.app.change_visible(keep)
 
     def change_screen(self, screen_rect):
@@ -403,17 +402,23 @@ class BeefaloWidget(QWidget, SettingInterface):
         if event.type() == QEvent.WindowDeactivate:
             self.change_visible(False)
             return True  # returning  True means not to pass to other widget's
-        if event.type() == QEvent.KeyPress and event.key() == Qt.Key_Tab:
-            if self.result_model.select.valid() and len(self.result_model.selected_item().menus):
-                # change the selected row's vision
-                if self.result_model.select.expand:
-                    self.result_model.select.selected_menu = -1
-                    self.result_model.select.expand = False
-                else:
-                    self.result_model.select.selected_menu = 0
-                    self.result_model.select.expand = True
-                self.repaint_selected_item()
-            return True
+        if event.type() == QEvent.KeyPress:
+            if event.key() == Qt.Key_Tab:
+                if self.result_model.select.valid() and len(self.result_model.selected_item().menus):
+                    # change the selected row's vision
+                    if self.result_model.select.expand:
+                        self.result_model.select.selected_menu = -1
+                        self.result_model.select.expand = False
+                    else:
+                        self.result_model.select.selected_menu = 0
+                        self.result_model.select.expand = True
+                    self.repaint_selected_item()
+                return True
+            elif event.key() == Qt.Key_Home:
+                self.ws_input.setCursorPosition(0)
+            elif event.key() == Qt.Key_End:
+                self.ws_input.setCursorPosition(len(self.ws_input.text()))
+                
         if obj == self.ws_listview:
             # print(event)
             pass
@@ -422,7 +427,9 @@ class BeefaloWidget(QWidget, SettingInterface):
 
 global sys_tray
 
-class MainWindow(QMainWindow):
+class MainWindow(QMainWindow, SettingInterface):
+    meta_info = PluginInfo()
+    meta_info.path = "."
     def __init__(self, app):
         super(MainWindow, self).__init__()
         self.app = app
@@ -481,7 +488,8 @@ class MainWindow(QMainWindow):
             self.activateWindow()
             self.raise_()
             self.widget.ws_input.setFocus()
-            # print("active window",self.isActiveWindow(), self.app.activeWindow())
+            if self.get_setting("change_input_method_at_show"):
+                os.system("./resources/change_input_method.sh")
     
     def show(self):
         if not self.isVisible():

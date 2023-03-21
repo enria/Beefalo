@@ -6,7 +6,7 @@
     "<alt>+<2>": "dict ",
     "<alt>+<17>": "todo ",
     "<alt>+<5>": "ghb ",
-    "<alt>+<12>": "qrc ",
+    "<alt>+<12>": "bing ",
     "<alt>+<11>": "bing ",
     "<alt>+<9>": "vsc ",
     "<alt>+<8>": "chbm ",
@@ -19,5 +19,6 @@
   "exclude_plugin_dir": [
     "qr_code","api_doc","everything","system_cmd"
   ],
-  "start_show":false
+  "start_show":false,
+  "change_input_method_at_show": false
 }

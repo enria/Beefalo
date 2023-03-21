@@ -19,7 +19,7 @@ class WindowSize(object):
         self.main_padding = (int(10 * s.g), int(10 * s.g))
 
         self.editor_height = 48 * s.g
-        self.editor_font_size = 30 * s.f
+        self.editor_font_size = 28 * s.f
 
         self.result_margin_top = 10 * s.g
 

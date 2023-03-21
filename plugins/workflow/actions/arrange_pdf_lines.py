@@ -13,4 +13,4 @@ def remove_redundancy_enter(text):
 
 if __name__ == "__main__":
     text = sys.argv[1]
-    print(remove_redundancy_enter(text))
+    print(remove_redundancy_enter(text),end="")
