@@ -158,8 +158,7 @@ class WidgetDelegate(QAbstractItemDelegate):
                 painter.setRenderHint(QPainter.Antialiasing)
                 path = QPainterPath()
                 path.addRoundedRect(0, option.rect.top(), option.rect.width(), self.i_size.height, radius, radius)
-                pen = QPen(Qt.green, 10)
-                painter.setPen(pen)
+                # pen = QPen(Qt.green, 10) painter.setPen(pen)
                 painter.fillPath(path, highlight_background)
             else:
                 background_brush = QBrush(highlight_background, Qt.SolidPattern)
@@ -224,8 +223,15 @@ class WidgetDelegate(QAbstractItemDelegate):
                                   option.rect.top() + self.i_size.height + i * self.i_size.menu_height,
                                   option.rect.width() - self.i_size.height, self.i_size.menu_height)
                 if i == self.model.select.selected_menu:
-                    background_brush = QBrush(highlight_background, Qt.SolidPattern)
-                    painter.fillRect(menu_rect, background_brush)
+                    if theme["highlight"].get("border_radius",0):
+                        radius = theme["highlight"].get("border_radius",0)//2
+                        painter.setRenderHint(QPainter.Antialiasing)
+                        path = QPainterPath()
+                        path.addRoundedRect(*menu_rect.getRect(), radius,radius)
+                        painter.fillPath(path, highlight_background)
+                    else:
+                        background_brush = QBrush(highlight_background, Qt.SolidPattern)
+                        painter.fillRect(menu_rect, background_brush)
                     color = theme["highlight"]["color"]
                 painter.setFont(sub_font)
                 painter.setPen(QColor(color))

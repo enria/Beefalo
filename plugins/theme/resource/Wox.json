@@ -13,7 +13,8 @@
         },
         "highlight": {
             "background": "#4f6180",
-            "color": "#f5f6f1"
+            "color": "#f5f6f1",
+            "border_radius": 6
         },
         "scroll": "#616161"
     }
