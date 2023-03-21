@@ -11,7 +11,7 @@
   "space":[
     {
       "keyword":"*",
-      "dirs": ["/Applications","/System/Applications"],
+      "dirs": ["/Applications","/System/Applications","/Users/zhangyd/Applications"],
       "args": ["kind:app"]
     },
     {
