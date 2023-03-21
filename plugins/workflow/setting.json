@@ -4,7 +4,7 @@
     "script": "plugins/workflow/actions/arrange_pdf_lines.py",
     "input": "clipboard",
     "output": "clipboard"
-    },  
+    },
     {
       "name": "文件名",
       "script": "plugins/workflow/actions/str2filename.py",

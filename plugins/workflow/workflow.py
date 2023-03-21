@@ -61,7 +61,7 @@ def run(flow: Workflow, args, plugin_info, api: ContextApi):
 
     if flow.script.endswith(".py"):
         try:
-            process = subprocess.Popen(["python", flow.script] + args,
+            process = subprocess.Popen(["python3", flow.script] + args,
                                        stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
                                        universal_newlines=True, encoding="utf-8")
             process_out = process.stdout.read()

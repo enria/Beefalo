@@ -10,4 +10,4 @@ def validate_filename(title):
 
 if __name__ == "__main__":
     text = sys.argv[1]
-    print(validate_filename(text))
+    print(validate_filename(text),end="")
