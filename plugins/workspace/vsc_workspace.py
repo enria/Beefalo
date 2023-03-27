@@ -4,6 +4,8 @@ import re
 from urllib.parse import unquote
 import sqlite3
 import urllib.parse
+from subprocess import Popen
+
 from workspace import Workspace
 
 vsc_path="code"
@@ -23,7 +25,7 @@ def multi_contain(total,parts):
 # 解决循环中的闭包问题
 def wrapper(uri):
     def open_workspace():
-        os.system('/usr/local/bin/code --folder-uri "%s"'%uri)
+        Popen(["/usr/local/bin/code","--folder-uri","%s"%uri])
     return open_workspace
 
 def delete_worksapce_item(item):
